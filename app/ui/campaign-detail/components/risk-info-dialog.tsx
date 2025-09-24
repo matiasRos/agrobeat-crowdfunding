@@ -54,7 +54,7 @@ export function RiskInfoDialog({ riskLevel }: RiskInfoDialogProps) {
           <Info className="h-3 w-3" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-orange-500" />
@@ -65,7 +65,7 @@ export function RiskInfoDialog({ riskLevel }: RiskInfoDialogProps) {
           </DialogDescription>
         </DialogHeader>
         
-        <div className="space-y-4">
+        <div className="space-y-4 pb-4">
           {/* Nivel de riesgo actual */}
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">Nivel de riesgo de esta campaña:</span>
