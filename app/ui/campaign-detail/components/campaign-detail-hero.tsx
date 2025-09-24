@@ -89,7 +89,18 @@ export function CampaignDetailHero({ campaign }: CampaignDetailHeroProps) {
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm opacity-90">
                 <MapPin className="h-4 w-4" />
-                <span>{campaign.location}</span>
+                {campaign.mapsLink ? (
+                  <a
+                    href={campaign.mapsLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-blue-300 transition-colors underline decoration-1 underline-offset-2"
+                  >
+                    {campaign.location}
+                  </a>
+                ) : (
+                  <span>{campaign.location}</span>
+                )}
                 <Badge variant="outline" className="border-white/30 bg-white/10 text-white">
                   {campaign.crop}
                 </Badge>

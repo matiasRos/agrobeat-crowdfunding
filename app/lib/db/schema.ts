@@ -1,4 +1,4 @@
-import { pgTable, serial, varchar, text, integer, decimal, timestamp, pgEnum, boolean } from 'drizzle-orm/pg-core';
+import { pgTable, serial, varchar, text, integer, decimal, timestamp, pgEnum, boolean, date, jsonb } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 // Enum para el nivel de riesgo
@@ -41,6 +41,7 @@ export const campaigns = pgTable('campaigns', {
   expectedReturn: decimal('expected_return', { precision: 5, scale: 2 }).notNull(),
   riskLevel: riskLevelEnum('risk_level').notNull(),
   imageUrl: varchar('image_url', { length: 500 }).notNull(),
+  mapsLink: varchar('maps_link', { length: 500 }),
   isActive: boolean('is_active').notNull().default(true),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
@@ -67,6 +68,16 @@ export const investments = pgTable('investments', {
   userId: integer('user_id').references(() => users.id).notNull(),
 });
 
+// Tabla de cronograma de campañas (flexible)
+export const campaignTimeline = pgTable('campaign_timeline', {
+  id: serial('id').primaryKey(),
+  campaignId: integer('campaign_id').references(() => campaigns.id).notNull(),
+  title: varchar('title', { length: 255 }).notNull().default('Cronograma de la Campaña'),
+  events: jsonb('events').notNull().default('[]'), // Array de eventos: [{title, date, description}]
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
 // Definir relaciones para Drizzle ORM
 export const usersRelations = relations(users, ({ many }) => ({
   investments: many(investments),
@@ -82,6 +93,10 @@ export const campaignsRelations = relations(campaigns, ({ one, many }) => ({
     references: [producers.id],
   }),
   investments: many(investments),
+  timeline: one(campaignTimeline, {
+    fields: [campaigns.id],
+    references: [campaignTimeline.campaignId],
+  }),
 }));
 
 export const investmentsRelations = relations(investments, ({ one }) => ({
@@ -92,6 +107,13 @@ export const investmentsRelations = relations(investments, ({ one }) => ({
   user: one(users, {
     fields: [investments.userId],
     references: [users.id],
+  }),
+}));
+
+export const campaignTimelineRelations = relations(campaignTimeline, ({ one }) => ({
+  campaign: one(campaigns, {
+    fields: [campaignTimeline.campaignId],
+    references: [campaigns.id],
   }),
 }));
 
@@ -107,3 +129,6 @@ export type NewCampaign = typeof campaigns.$inferInsert;
 
 export type Investment = typeof investments.$inferSelect;
 export type NewInvestment = typeof investments.$inferInsert;
+
+export type CampaignTimeline = typeof campaignTimeline.$inferSelect;
+export type NewCampaignTimeline = typeof campaignTimeline.$inferInsert;

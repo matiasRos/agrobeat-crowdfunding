@@ -1,5 +1,5 @@
 // Re-exportamos los tipos de la base de datos para mantener compatibilidad
-export type { Campaign, NewCampaign } from '@/app/lib/db/schema';
+export type { Campaign, NewCampaign, CampaignTimeline, NewCampaignTimeline } from '@/app/lib/db/schema';
 
 // Tipo para la respuesta de la API
 export interface CampaignResponse {
@@ -16,6 +16,7 @@ export interface CampaignResponse {
   expectedReturn: string;
   riskLevel: 'Bajo' | 'Medio' | 'Alto';
   imageUrl: string;
+  mapsLink?: string;
   // Campos para simulador de inversión
   costPerPlant: string;
   plantsPerM2: number;
@@ -24,6 +25,14 @@ export interface CampaignResponse {
   producer: {
     name: string;
     experience: number;
+  };
+  timeline?: {
+    title: string;
+    events: Array<{
+      title: string;
+      date: string; // ISO string
+      description?: string;
+    }>;
   };
 }
 
@@ -38,6 +47,7 @@ export interface CampaignInput {
   expectedReturn: number;
   riskLevel: 'Bajo' | 'Medio' | 'Alto';
   imageUrl: string;
+  mapsLink?: string;
   // Campos para simulador de inversión
   costPerPlant: number;
   plantsPerM2: number;
@@ -49,4 +59,11 @@ export interface CampaignInput {
   producerEmail?: string;
   producerPhone?: string;
   producerLocation?: string;
+  // Cronograma de la campaña
+  timelineTitle?: string;
+  timelineEvents?: Array<{
+    title: string;
+    date: string; // ISO string
+    description?: string;
+  }>;
 }

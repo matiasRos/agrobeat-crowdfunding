@@ -22,9 +22,6 @@ export function CampaignDetailContent({ campaign }: CampaignDetailContentProps) 
             <div className="lg:col-span-1">
               <CampaignDetailInfo campaign={campaign} />
             </div>
-
-            {/* Simulador de inversión */}
-
           </div>
         </main>
       </div>

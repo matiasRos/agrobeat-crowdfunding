@@ -1,10 +1,10 @@
 import { db } from '@/app/lib/db';
-import { campaigns, producers, investments, users, NewCampaign, NewProducer } from '@/app/lib/db/schema';
+import { campaigns, producers, investments, users, campaignTimeline, NewCampaign, NewProducer } from '@/app/lib/db/schema';
 import { eq, sql, count, asc } from 'drizzle-orm';
 import { CampaignResponse } from '@/app/types/campaign';
 
 // Helper function to map DB campaign to API response format
-const mapCampaignToResponse = (campaign: any, producer: any, investmentStats: any): CampaignResponse => {
+const mapCampaignToResponse = (campaign: any, producer: any, investmentStats: any, timeline?: any): CampaignResponse => {
   // Calcular días restantes dinámicamente
   const closingDate = new Date(campaign.closingDate);
   const today = new Date();
@@ -25,6 +25,7 @@ const mapCampaignToResponse = (campaign: any, producer: any, investmentStats: an
     expectedReturn: campaign.expectedReturn, // Decimal comes as string from DB
     riskLevel: campaign.riskLevel,
     imageUrl: campaign.imageUrl,
+    mapsLink: campaign.mapsLink,
     // Campos para simulador de inversión
     costPerPlant: campaign.costPerPlant, // Decimal comes as string from DB
     plantsPerM2: campaign.plantsPerM2,
@@ -34,6 +35,10 @@ const mapCampaignToResponse = (campaign: any, producer: any, investmentStats: an
       name: producer.name,
       experience: producer.experience,
     },
+    timeline: timeline ? {
+      title: timeline.title,
+      events: timeline.events || []
+    } : undefined,
   };
 };
 
@@ -43,14 +48,16 @@ export class CampaignService {
    */
   static async getAllCampaigns(): Promise<CampaignResponse[]> {
     try {
-      // Obtener campañas con sus productores
+      // Obtener campañas con sus productores y cronograma
       const campaignsWithProducers = await db
         .select({
           campaign: campaigns,
           producer: producers,
+          timeline: campaignTimeline,
         })
         .from(campaigns)
         .leftJoin(producers, eq(campaigns.producerId, producers.id))
+        .leftJoin(campaignTimeline, eq(campaigns.id, campaignTimeline.campaignId))
         .where(eq(campaigns.isActive, true))
         .orderBy(asc(campaigns.id));
 
@@ -79,7 +86,7 @@ export class CampaignService {
       // Mapear los resultados
       return campaignsWithProducers.map(row => {
         const stats = statsMap.get(row.campaign.id) || { raisedAmount: '0.00', investorCount: 0 };
-        return mapCampaignToResponse(row.campaign, row.producer, stats);
+        return mapCampaignToResponse(row.campaign, row.producer, stats, row.timeline);
       });
     } catch (error) {
       console.error('Error fetching campaigns:', error);
@@ -92,14 +99,16 @@ export class CampaignService {
    */
   static async getCampaignById(id: number): Promise<CampaignResponse | null> {
     try {
-      // Obtener campaña con productor
+      // Obtener campaña con productor y cronograma
       const result = await db
         .select({
           campaign: campaigns,
           producer: producers,
+          timeline: campaignTimeline,
         })
         .from(campaigns)
         .leftJoin(producers, eq(campaigns.producerId, producers.id))
+        .leftJoin(campaignTimeline, eq(campaigns.id, campaignTimeline.campaignId))
         .where(eq(campaigns.id, id))
         .limit(1);
 
@@ -117,7 +126,7 @@ export class CampaignService {
           .where(eq(investments.campaignId, id));
 
       const stats = investmentStats || { raisedAmount: '0.00', investorCount: 0 };
-      return mapCampaignToResponse(result[0].campaign, result[0].producer, stats);
+      return mapCampaignToResponse(result[0].campaign, result[0].producer, stats, result[0].timeline);
     } catch (error) {
       console.error(`Error fetching campaign with id ${id}:`, error);
       throw new Error(`Failed to fetch campaign with id ${id}`);
@@ -242,6 +251,88 @@ export class CampaignService {
   }
 
   /**
+   * Obtiene las inversiones de un usuario con información de las campañas
+   */
+  static async getUserInvestments(userEmail: string): Promise<Array<{
+    id: number;
+    amount: string;
+    plantCount: number;
+    createdAt: Date;
+    campaign: CampaignResponse;
+  }> | null> {
+    try {
+      // Primero obtener el usuario por email
+      const userResult = await db.select().from(users).where(eq(users.email, userEmail)).limit(1);
+      if (userResult.length === 0) {
+        return null;
+      }
+
+      const userId = userResult[0].id;
+
+      // Obtener inversiones del usuario con información de campañas
+      const userInvestments = await db
+        .select({
+          investment: investments,
+          campaign: campaigns,
+          producer: producers,
+        })
+        .from(investments)
+        .leftJoin(campaigns, eq(investments.campaignId, campaigns.id))
+        .leftJoin(producers, eq(campaigns.producerId, producers.id))
+        .where(eq(investments.userId, userId));
+
+      if (userInvestments.length === 0) {
+        return [];
+      }
+
+      // Obtener estadísticas de inversión para cada campaña
+      const campaignIds = Array.from(new Set(userInvestments.map(row => row.campaign?.id).filter((id): id is number => id !== undefined)));
+      
+      const investmentStats = await db
+        .select({
+          campaignId: investments.campaignId,
+          raisedAmount: sql<string>`COALESCE(SUM(${investments.amount}), 0)::text`,
+          investorCount: count(sql`DISTINCT ${investments.userId}`),
+        })
+        .from(investments)
+        .where(sql`${investments.campaignId} IN (${sql.join(campaignIds, sql`, `)})`)
+        .groupBy(investments.campaignId);
+
+      // Crear un mapa de estadísticas por campaignId
+      const statsMap = new Map();
+      investmentStats.forEach(stat => {
+        statsMap.set(stat.campaignId, {
+          raisedAmount: stat.raisedAmount,
+          investorCount: stat.investorCount,
+        });
+      });
+
+      // Mapear los resultados
+      return userInvestments
+        .map(row => {
+          if (!row.campaign || !row.producer) {
+            return null;
+          }
+
+          const stats = statsMap.get(row.campaign.id) || { raisedAmount: '0.00', investorCount: 0 };
+          const campaignResponse = mapCampaignToResponse(row.campaign, row.producer, stats);
+
+          return {
+            id: row.investment.id,
+            amount: row.investment.amount,
+            plantCount: row.investment.plantCount,
+            createdAt: row.investment.investedAt,
+            campaign: campaignResponse,
+          };
+        })
+        .filter((item): item is NonNullable<typeof item> => item !== null);
+    } catch (error) {
+      console.error(`Error fetching user investments for ${userEmail}:`, error);
+      throw new Error(`Failed to fetch user investments for ${userEmail}`);
+    }
+  }
+
+  /**
    * Simula una inversión en una campaña
    */
   static async investInCampaign(
@@ -301,3 +392,6 @@ export class CampaignService {
     }
   }
 }
+ 
+// Funciones auxiliares exportadas
+export const getUserInvestments = CampaignService.getUserInvestments;

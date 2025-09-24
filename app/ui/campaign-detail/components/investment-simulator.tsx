@@ -157,16 +157,21 @@ export function InvestmentSimulator({ campaign }: InvestmentSimulatorProps) {
                 </Button>
 
               </div>
-              <p className={`text-xs text-center ${
-                plantCount < cropConfig.minPlants || plantCount > cropConfig.maxPlants
-                  ? 'text-red-500'
-                  : 'text-muted-foreground'
-              }`}>
-                Rango: {cropConfig.minPlants} - {cropConfig.maxPlants} plantas
-                {(plantCount < cropConfig.minPlants || plantCount > cropConfig.maxPlants) && (
-                  <span className="block">⚠️ Valor fuera del rango permitido</span>
-                )}
-              </p>
+              <div className="text-xs text-center space-y-1 text-muted-foreground">
+                <p>
+                  Este es un proyecto piloto con una pequeña parcela para validar el modelo de inversión.
+                </p>
+                <p className={`${
+                  plantCount < cropConfig.minPlants || plantCount > cropConfig.maxPlants
+                    ? 'text-red-500'
+                    : 'text-muted-foreground'
+                }`}>
+                  Rango permitido: {cropConfig.minPlants} - {cropConfig.maxPlants} plantas
+                  {(plantCount < cropConfig.minPlants || plantCount > cropConfig.maxPlants) && (
+                    <span className="block text-red-500">⚠️ Valor fuera del rango permitido</span>
+                  )}
+                </p>
+              </div>
             </div>
           )}
           {/* Cálculos de inversión */}

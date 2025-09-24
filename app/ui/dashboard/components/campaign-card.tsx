@@ -9,9 +9,15 @@ import Image from "next/image";
 
 interface CampaignCardProps {
   campaign: CampaignResponse;
+  userInvestment?: {
+    id: number;
+    amount: string;
+    plantCount: number;
+    createdAt: Date;
+  };
 }
 
-export function CampaignCard({ campaign }: CampaignCardProps) {
+export function CampaignCard({ campaign, userInvestment }: CampaignCardProps) {
   const progressPercentage = (parseFloat(campaign.raisedAmount) / parseFloat(campaign.targetAmount)) * 100;
   
   // Función para formatear el tiempo restante
@@ -125,6 +131,28 @@ export function CampaignCard({ campaign }: CampaignCardProps) {
             <p className="text-xs text-muted-foreground">Retorno est.</p>
           </div>
         </div>
+
+        {/* Mi Inversión - Solo si existe */}
+        {userInvestment && (
+          <div className="rounded-lg bg-green-50 border border-green-200 p-3">
+            <p className="text-xs text-green-700 font-medium">Mi Inversión</p>
+            <div className="flex justify-between items-center mt-1">
+              <div>
+                <p className="text-sm font-medium text-green-800">
+                  {formatCurrency(parseFloat(userInvestment.amount))}
+                </p>
+                <p className="text-xs text-green-600">
+                  {userInvestment.plantCount} plantas
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-green-600">
+                  Invertido el {new Date(userInvestment.createdAt).toLocaleDateString('es-PY')}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Productor */}
         <div className="rounded-lg bg-muted/30 p-3">

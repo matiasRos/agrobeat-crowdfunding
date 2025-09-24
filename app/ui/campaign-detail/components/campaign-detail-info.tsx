@@ -2,6 +2,8 @@ import { CampaignResponse } from '@/app/types/campaign';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { CampaignTimeline } from './campaign-timeline';
+import { RiskInfoDialog } from './risk-info-dialog';
 import {
   User,
   Award,
@@ -10,7 +12,9 @@ import {
   Calendar,
   TrendingUp,
   Shield,
-  Target
+  Target,
+  ExternalLink,
+  AlertTriangle
 } from 'lucide-react';
 
 interface CampaignDetailInfoProps {
@@ -24,6 +28,17 @@ export function CampaignDetailInfo({ campaign }: CampaignDetailInfoProps) {
       currency: 'PYG',
       minimumFractionDigits: 0,
     }).format(amount);
+  };
+
+  const getRiskBadgeVariant = (risk: CampaignResponse['riskLevel']) => {
+    switch (risk) {
+      case 'Bajo':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'Medio':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'Alto':
+        return 'bg-red-100 text-red-800 border-red-200';
+    }
   };
 
   return (
@@ -76,14 +91,30 @@ export function CampaignDetailInfo({ campaign }: CampaignDetailInfoProps) {
               <div className="flex items-center gap-2">
                 <TrendingUp className="h-4 w-4 text-green-600" />
                 <span className="text-sm text-muted-foreground">Retorno Esperado</span>
+                <RiskInfoDialog riskLevel={campaign.riskLevel} />
               </div>
-              <p className="text-xl font-bold">
-                {parseFloat(campaign.expectedReturn)}%
-              </p>
+              <div className="space-y-2">
+                <p className="text-xl font-bold">
+                  {parseFloat(campaign.expectedReturn)}%
+                </p>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">Riesgo:</span>
+                  <Badge variant="outline" className={`text-xs ${getRiskBadgeVariant(campaign.riskLevel)} flex items-center gap-1`}>
+                    <AlertTriangle className="h-3 w-3" />
+                    {campaign.riskLevel}
+                  </Badge>
+                </div>
+              </div>
             </div>
-
-
           </div>
+
+          {/* Cronograma integrado */}
+          {campaign.timeline && campaign.timeline.events.length > 0 && (
+            <>
+              <Separator />
+              <CampaignTimeline campaign={campaign} showAsCard={false} />
+            </>
+          )}
         </CardContent>
       </Card>
       {/* Información del productor */}
@@ -110,10 +141,23 @@ export function CampaignDetailInfo({ campaign }: CampaignDetailInfoProps) {
 
           <Separator />
 
-          <div className="grid gap-3 md:grid-cols-2">
-            <div className="flex items-center gap-2 text-sm">
-              <MapPin className="h-4 w-4 text-muted-foreground" />
-              <span><strong>Ubicación:</strong> {campaign.location}</span>
+          <div className="grid gap-3 md:grid-cols-1">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-sm">
+                <MapPin className="h-4 w-4 text-muted-foreground" />
+                <span><strong>Ubicación:</strong> {campaign.location}</span>
+              </div>
+              {campaign.mapsLink && (
+                <a
+                  href={campaign.mapsLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 transition-colors"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  Ver en Maps
+                </a>
+              )}
             </div>
           </div>
         </CardContent>
