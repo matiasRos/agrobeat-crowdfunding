@@ -14,8 +14,8 @@ export const metadata = {
     card: 'summary_large_image',
     title,
     description,
-    },
-    metadataBase: new URL('https://agrobeat-crowdfunding-vym1.vercel.app/'),
+  },
+  metadataBase: new URL('https://agrobeat-crowdfunding-vym1.vercel.app/'),
 };
 
 export default function RootLayout({
@@ -24,7 +24,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en"> 
+    <html lang="en">
+      <head>
+        {/* Iconos y enlaces */}
+        <link rel="icon" type="image/png" href="/icon-192x192.png" />
+        <link rel="apple-touch-icon" href="/icon-192x192.png" />
+        <link rel="apple-touch-startup-image" href="/icon-512x512.png" />
+      </head>
       <body className={`${GeistSans.variable} ${GeistMono.variable} font-sans`}>{children}</body>
     </html>
   );
