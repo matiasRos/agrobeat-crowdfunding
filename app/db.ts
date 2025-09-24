@@ -1,29 +1,23 @@
-import { drizzle } from 'drizzle-orm/postgres-js';
-import { pgTable, serial, varchar } from 'drizzle-orm/pg-core';
 import { eq } from 'drizzle-orm';
-import postgres from 'postgres';
 import { genSaltSync, hashSync } from 'bcrypt-ts';
+import { db, client } from './lib/db';
+import { users } from './lib/db/schema';
 
-// Optionally, if not using email/pass login, you can
-// use the Drizzle adapter for Auth.js / NextAuth
-// https://authjs.dev/reference/adapter/drizzle
-let client = postgres(`${process.env.POSTGRES_URL!}?sslmode=require`);
-let db = drizzle(client);
-
+// Funciones para manejo de usuarios (mantienen compatibilidad con NextAuth)
 export async function getUser(email: string) {
-  const users = await ensureTableExists();
+  await ensureUserTableExists();
   return await db.select().from(users).where(eq(users.email, email));
 }
 
 export async function createUser(email: string, password: string) {
-  const users = await ensureTableExists();
+  await ensureUserTableExists();
   let salt = genSaltSync(10);
   let hash = hashSync(password, salt);
 
   return await db.insert(users).values({ email, password: hash });
 }
 
-async function ensureTableExists() {
+async function ensureUserTableExists() {
   const result = await client`
     SELECT EXISTS (
       SELECT FROM information_schema.tables 
@@ -39,12 +33,4 @@ async function ensureTableExists() {
         password VARCHAR(64)
       );`;
   }
-
-  const table = pgTable('User', {
-    id: serial('id').primaryKey(),
-    email: varchar('email', { length: 64 }),
-    password: varchar('password', { length: 64 }),
-  });
-
-  return table;
 }
