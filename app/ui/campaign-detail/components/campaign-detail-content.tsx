@@ -14,7 +14,7 @@ export function CampaignDetailContent({ campaign }: CampaignDetailContentProps) 
       <CampaignDetailHero campaign={campaign} />
       <div >
         <main className="container mx-auto max-w-screen-2xl px-4 py-8 md:px-6 lg:px-8 ">
-          <div className="grid gap-8 lg:grid-cols-3">
+          <div className="grid gap-3 lg:grid-cols-3">
             {/* Información detallada de la campaña */}
             <div className="lg:col-span-2">
               <InvestmentSimulator campaign={campaign} />

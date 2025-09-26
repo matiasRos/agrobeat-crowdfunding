@@ -16,6 +16,7 @@ export interface CampaignResponse {
   expectedReturn: string;
   riskLevel: 'Bajo' | 'Medio' | 'Alto';
   imageUrl: string;
+  iconUrl?: string;
   mapsLink?: string;
   // Campos para simulador de inversión
   costPerPlant: string;
@@ -34,6 +35,8 @@ export interface CampaignResponse {
       description?: string;
     }>;
   };
+  // Indica si el usuario ya invirtió en esta campaña
+  isInvestedByUser?: boolean;
 }
 
 // Tipo para crear/actualizar campañas desde el frontend
@@ -47,6 +50,7 @@ export interface CampaignInput {
   expectedReturn: number;
   riskLevel: 'Bajo' | 'Medio' | 'Alto';
   imageUrl: string;
+  iconUrl?: string;
   mapsLink?: string;
   // Campos para simulador de inversión
   costPerPlant: number;

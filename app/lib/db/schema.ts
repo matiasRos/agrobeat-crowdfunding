@@ -4,6 +4,9 @@ import { relations } from 'drizzle-orm';
 // Enum para el nivel de riesgo
 export const riskLevelEnum = pgEnum('risk_level', ['Bajo', 'Medio', 'Alto']);
 
+// Enum para roles de usuario
+export const userRoleEnum = pgEnum('user_role', ['admin', 'investor']);
+
 // Tabla de usuarios (autenticación + inversores)
 export const users = pgTable('User', {
   id: serial('id').primaryKey(),
@@ -11,6 +14,7 @@ export const users = pgTable('User', {
   password: varchar('password', { length: 64 }).notNull(),
   name: varchar('name', { length: 255 }),
   phone: varchar('phone', { length: 50 }),
+  role: userRoleEnum('role').default('investor'),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 });
@@ -41,6 +45,7 @@ export const campaigns = pgTable('campaigns', {
   expectedReturn: decimal('expected_return', { precision: 5, scale: 2 }).notNull(),
   riskLevel: riskLevelEnum('risk_level').notNull(),
   imageUrl: varchar('image_url', { length: 500 }).notNull(),
+  iconUrl: varchar('icon_url', { length: 500 }),
   mapsLink: varchar('maps_link', { length: 500 }),
   isActive: boolean('is_active').notNull().default(true),
   createdAt: timestamp('created_at').defaultNow().notNull(),

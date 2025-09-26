@@ -1,6 +1,6 @@
 import { HeroSection } from "./hero-section";
-import { MyCampaignsSection } from "./my-campaigns-section";
-import { CampaignsSection } from "./campaigns-section";
+import { MyCampaignsSection } from "@/app/ui/my-campaigns/components/my-campaigns-section";
+import { CampaignsSection } from "@/app/ui/campaign/components/campaigns-section";
 
 export function DashboardLayout() {
   return (

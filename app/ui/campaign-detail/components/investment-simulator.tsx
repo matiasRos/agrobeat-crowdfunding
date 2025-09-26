@@ -161,11 +161,10 @@ export function InvestmentSimulator({ campaign }: InvestmentSimulatorProps) {
                 <p>
                   Este es un proyecto piloto con una pequeña parcela para validar el modelo de inversión.
                 </p>
-                <p className={`${
-                  plantCount < cropConfig.minPlants || plantCount > cropConfig.maxPlants
-                    ? 'text-red-500'
-                    : 'text-muted-foreground'
-                }`}>
+                <p className={`${plantCount < cropConfig.minPlants || plantCount > cropConfig.maxPlants
+                  ? 'text-red-500'
+                  : 'text-muted-foreground'
+                  }`}>
                   Rango permitido: {cropConfig.minPlants} - {cropConfig.maxPlants} plantas
                   {(plantCount < cropConfig.minPlants || plantCount > cropConfig.maxPlants) && (
                     <span className="block text-red-500">⚠️ Valor fuera del rango permitido</span>
@@ -174,55 +173,54 @@ export function InvestmentSimulator({ campaign }: InvestmentSimulatorProps) {
               </div>
             </div>
           )}
-          {/* Cálculos de inversión */}
-          <div className="space-y-4">
-            <div className="grid gap-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Costo por planta:</span>
-                <span className="font-medium">{formatCurrency(cropConfig.costPerPlant)}</span>
-              </div>
-
-              <Separator />
-
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-sm font-medium">Inversión total:</span>
-                <span className="font-bold text-lg">
-                  {formatCurrency(investmentAmount)}
-                </span>
-              </div>
-            </div>
-
-            {/* Proyección de retornos */}
-            <div className="bg-muted border border-muted rounded-lg p-4 space-y-3">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-green-600" />
-                <span className="font-medium ">Proyección de Retornos</span>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-sm">Ganancia esperada ({parseFloat(campaign.expectedReturn)}%):</span>
-                  <span className="font-bold text-lg">
-                    {formatCurrency(projectedReturn)}
-                  </span>
+          {!existingInvestment?.hasInvestment && (
+            <div className="space-y-4">
+              <div className="grid gap-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Costo por planta:</span>
+                  <span className="font-medium">{formatCurrency(cropConfig.costPerPlant)}</span>
                 </div>
 
-                <div className="flex justify-between">
-                  <span className="text-sm">Retorno total:</span>
+                <Separator />
+
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-sm font-medium">Inversión total:</span>
                   <span className="font-bold text-lg">
-                    {formatCurrency(totalReturn)}
+                    {formatCurrency(investmentAmount)}
                   </span>
                 </div>
               </div>
+
+              <div className="bg-muted border border-muted rounded-lg p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-green-600" />
+                  <span className="font-medium ">Proyección de Retornos</span>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm">Ganancia esperada ({parseFloat(campaign.expectedReturn)}%):</span>
+                    <span className="font-bold text-lg">
+                      {formatCurrency(projectedReturn)}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between">
+                    <span className="text-sm">Retorno total:</span>
+                    <span className="font-bold text-lg">
+                      {formatCurrency(totalReturn)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
             </div>
-
-          </div>
-
+          )}
           <Separator />
 
           {/* Inversión existente */}
           {existingInvestment?.hasInvestment && existingInvestment.investment && (
-            <div className="rounded-lg p-4 border bg-green-50 border-green-200 text-green-800">
+            <div className="rounded-lg p-4 border bg-green-50 border-none text-green-800">
               <div className="flex items-center gap-2 mb-2">
                 <CheckCircle className="h-5 w-5" />
                 <span className="font-medium">Ya tienes una reserva activa</span>
@@ -253,37 +251,35 @@ export function InvestmentSimulator({ campaign }: InvestmentSimulatorProps) {
           )}
 
           {/* Botón de inversión */}
-          <Button
-            onClick={handleInvestment}
-            disabled={
-              isPending ||
-              plantCount < cropConfig.minPlants ||
-              existingInvestment?.hasInvestment
-            }
-            className="w-full"
-            size="lg"
-          >
-            {isPending ? (
-              <div className="flex items-center gap-2">
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                Procesando inversión...
-              </div>
-            ) : existingInvestment?.hasInvestment ? (
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4" />
-                Ya tienes una reserva activa
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4" />
-                Reservar Inversión
-              </div>
-            )}
-          </Button>
-
+          {!existingInvestment?.hasInvestment && (
+            <Button
+              onClick={handleInvestment}
+              disabled={
+                isPending ||
+                plantCount < cropConfig.minPlants ||
+                existingInvestment?.hasInvestment
+              }
+              className="w-full"
+              size="lg"
+            >
+              {isPending ? (
+                <div className="flex items-center gap-2">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  Procesando inversión...
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <DollarSign className="h-4 w-4" />
+                  Reservar Inversión
+                </div>
+              )}
+            </Button>
+          )}
+          {!existingInvestment?.hasInvestment && (
           <p className="text-xs text-muted-foreground text-center">
             * Esta es una simulación. Los retornos reales pueden variar.
           </p>
+          )}
         </CardContent>
       </Card>
     </div >

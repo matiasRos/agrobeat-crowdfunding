@@ -1,8 +1,11 @@
 import { RegisterForm } from '@/app/ui/register/components/register-form';
 import { redirect } from 'next/navigation';
 import { createUser, getUser } from '@/app/db';
+import { requireRole } from '@/app/lib/auth/permissions';
 
-export default function Register() {
+export default async function Register() {
+  // Solo los admins pueden acceder a esta página
+  await requireRole('admin');
   async function register(formData: FormData) {
     'use server';
     
@@ -12,18 +15,23 @@ export default function Register() {
     
     // Validar que las contraseñas coincidan
     if (password !== confirmPassword) {
-      throw new Error('Las contraseñas no coinciden');
+      return { error: 'Las contraseñas no coinciden' };
     }
     
     // Verificar si el usuario ya existe
     const user = await getUser(email);
     
     if (user.length > 0) {
-      throw new Error('El usuario ya existe');
+      return { error: 'El usuario ya existe' };
     }
     
-    await createUser(email, password);
-    redirect('/login');
+    try {
+      await createUser(email, password);
+      redirect('/login');
+    } catch (error) {
+      console.error('Error creating user:', error);
+      return { error: 'Error al crear la cuenta. Inténtalo de nuevo.' };
+    }
   }
 
   return (

@@ -2,24 +2,19 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { MapPin, Users, Clock, TrendingUp } from "lucide-react";
+import { MapPin, Users, Clock, TrendingUp, CheckCircle } from "lucide-react";
 import { CampaignResponse } from "@/app/types/campaign";
 import Link from "next/link";
 import Image from "next/image";
 
 interface CampaignCardProps {
   campaign: CampaignResponse;
-  userInvestment?: {
-    id: number;
-    amount: string;
-    plantCount: number;
-    createdAt: Date;
-  };
+ 
 }
 
-export function CampaignCard({ campaign, userInvestment }: CampaignCardProps) {
+export function CampaignCard({ campaign}: CampaignCardProps) {
   const progressPercentage = (parseFloat(campaign.raisedAmount) / parseFloat(campaign.targetAmount)) * 100;
-  
+
   // Función para formatear el tiempo restante
   const formatTimeRemaining = (daysLeft: number) => {
     if (daysLeft <= 0) {
@@ -36,9 +31,9 @@ export function CampaignCard({ campaign, userInvestment }: CampaignCardProps) {
     }
     return { text: `${daysLeft} días`, color: 'text-muted-foreground' };
   };
-  
+
   const timeInfo = formatTimeRemaining(campaign.daysLeft);
-  
+
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-PY', {
@@ -55,11 +50,22 @@ export function CampaignCard({ campaign, userInvestment }: CampaignCardProps) {
         <Image
           src={campaign.imageUrl}
           alt={campaign.title}
-          className="h-full w-full object-cover"
+          className={`h-full w-full object-cover transition-all duration-300 ${
+            campaign.isInvestedByUser ? 'blur-sm scale-105' : ''
+          }`}
           width={500}
           height={500}
         />
-        
+
+        {/* Indicador de campaña ya reservada - centrado */}
+        {campaign.isInvestedByUser && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+            <Badge variant="secondary" className="bg-green-500 text-white border-green-600 px-4 py-2 text-sm font-semibold shadow-lg hover:bg-green-600">
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Reservado
+            </Badge>
+          </div>
+        )}
       </div>
 
       <CardHeader className="pb-3">
@@ -71,7 +77,7 @@ export function CampaignCard({ campaign, userInvestment }: CampaignCardProps) {
             </p>
           </div>
         </div>
-        
+
         <div className="flex items-center gap-4 text-sm text-muted-foreground">
           <div className="flex items-center gap-1">
             <MapPin className="h-3 w-3" />
@@ -104,25 +110,25 @@ export function CampaignCard({ campaign, userInvestment }: CampaignCardProps) {
             </div>
             <p className="text-xs text-muted-foreground">Inversores</p>
           </div>
-          
-                <div className="space-y-1">
-                  <div className="flex items-center justify-center gap-1">
-                    <Clock className={`h-3 w-3 ${timeInfo.color}`} />
-                    <span className={`text-sm font-medium ${timeInfo.color}`}>
-                      {timeInfo.text}
-                    </span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {campaign.daysLeft > 0 ? 'Restante' : 'Estado'}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {new Date(campaign.closingDate).toLocaleDateString('es-PY', {
-                      day: 'numeric',
-                      month: 'short'
-                    })}
-                  </p>
-                </div>
-          
+
+          <div className="space-y-1">
+            <div className="flex items-center justify-center gap-1">
+              <Clock className={`h-3 w-3 ${timeInfo.color}`} />
+              <span className={`text-sm font-medium ${timeInfo.color}`}>
+                {timeInfo.text}
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {campaign.daysLeft > 0 ? 'Restante' : 'Estado'}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {new Date(campaign.closingDate).toLocaleDateString('es-PY', {
+                day: 'numeric',
+                month: 'short'
+              })}
+            </p>
+          </div>
+
           <div className="space-y-1">
             <div className="flex items-center justify-center gap-1">
               <TrendingUp className="h-3 w-3 text-muted-foreground" />
@@ -132,30 +138,8 @@ export function CampaignCard({ campaign, userInvestment }: CampaignCardProps) {
           </div>
         </div>
 
-        {/* Mi Inversión - Solo si existe */}
-        {userInvestment && (
-          <div className="rounded-lg bg-green-50 border border-green-200 p-3">
-            <p className="text-xs text-green-700 font-medium">Mi Inversión</p>
-            <div className="flex justify-between items-center mt-1">
-              <div>
-                <p className="text-sm font-medium text-green-800">
-                  {formatCurrency(parseFloat(userInvestment.amount))}
-                </p>
-                <p className="text-xs text-green-600">
-                  {userInvestment.plantCount} plantas
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="text-xs text-green-600">
-                  Invertido el {new Date(userInvestment.createdAt).toLocaleDateString('es-PY')}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Productor */}
-        <div className="rounded-lg bg-muted/30 p-3">
+        <div className="rounded-lg bg-muted p-3">
           <p className="text-xs text-muted-foreground">Productor</p>
           <p className="text-sm font-medium">{campaign.producer.name}</p>
           <p className="text-xs text-muted-foreground">
@@ -164,13 +148,15 @@ export function CampaignCard({ campaign, userInvestment }: CampaignCardProps) {
         </div>
       </CardContent>
 
-            <CardFooter>
-              <Button className="w-full" asChild>
-                <Link href={`/dashboard/campaigns/${campaign.id}`}>
-                  Ver Detalles
-                </Link>
-              </Button>
-            </CardFooter>
+      <CardFooter>
+        {!campaign.isInvestedByUser && (
+          <Button className="w-full" asChild>
+            <Link href={`/dashboard/campaigns/${campaign.id}`}>
+              Ver Detalles
+            </Link>
+          </Button>
+        )}
+      </CardFooter>
     </Card>
   );
 }

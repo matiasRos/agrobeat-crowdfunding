@@ -13,20 +13,28 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from 'next/link';
 import { useFormStatus } from 'react-dom';
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
+import { toast } from 'sonner';
 
-function SubmitButton({ children }: { children: React.ReactNode }) {
+function SubmitButton({ 
+  children, 
+  isPending 
+}: { 
+  children: React.ReactNode;
+  isPending?: boolean;
+}) {
   const { pending } = useFormStatus();
+  const isLoading = pending || isPending;
 
   return (
     <Button 
-      type={pending ? 'button' : 'submit'}
-      aria-disabled={pending}
+      type={isLoading ? 'button' : 'submit'}
+      aria-disabled={isLoading}
       className="w-full"
-      disabled={pending}
+      disabled={isLoading}
     >
       {children}
-      {pending && (
+      {isLoading && (
         <svg
           className="animate-spin ml-2 h-4 w-4"
           xmlns="http://www.w3.org/2000/svg"
@@ -49,7 +57,7 @@ function SubmitButton({ children }: { children: React.ReactNode }) {
         </svg>
       )}
       <span aria-live="polite" className="sr-only" role="status">
-        {pending ? 'Loading' : 'Submit form'}
+        {isLoading ? 'Loading' : 'Submit form'}
       </span>
     </Button>
   );
@@ -60,12 +68,22 @@ export function RegisterForm({
   action,
   ...props
 }: React.ComponentProps<"div"> & {
-  action: (formData: FormData) => Promise<void>;
+  action: (formData: FormData) => Promise<{ error?: string } | void>;
 }) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [isPending, startTransition] = useTransition();
   const passwordsMatch = password === confirmPassword;
   const showPasswordError = confirmPassword.length > 0 && !passwordsMatch;
+
+  const handleSubmit = async (formData: FormData) => {
+    startTransition(async () => {
+      const result = await action(formData);
+      if (result?.error) {
+        toast.error(result.error);
+      }
+    });
+  };
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
@@ -77,7 +95,7 @@ export function RegisterForm({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form action={action}>
+          <form action={handleSubmit}>
             <div className="flex flex-col gap-6">
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
@@ -121,7 +139,7 @@ export function RegisterForm({
                 )}
               </div>
               <div className="flex flex-col gap-3">
-                <SubmitButton>
+                <SubmitButton isPending={isPending}>
                   Crear cuenta
                 </SubmitButton>
               </div>

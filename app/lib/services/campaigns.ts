@@ -1,10 +1,10 @@
 import { db } from '@/app/lib/db';
 import { campaigns, producers, investments, users, campaignTimeline, NewCampaign, NewProducer } from '@/app/lib/db/schema';
-import { eq, sql, count, asc } from 'drizzle-orm';
+import { eq, sql, count, asc, notExists, and } from 'drizzle-orm';
 import { CampaignResponse } from '@/app/types/campaign';
 
 // Helper function to map DB campaign to API response format
-const mapCampaignToResponse = (campaign: any, producer: any, investmentStats: any, timeline?: any): CampaignResponse => {
+const mapCampaignToResponse = (campaign: any, producer: any, investmentStats: any, timeline?: any, isInvestedByUser?: boolean): CampaignResponse => {
   // Calcular días restantes dinámicamente
   const closingDate = new Date(campaign.closingDate);
   const today = new Date();
@@ -25,6 +25,7 @@ const mapCampaignToResponse = (campaign: any, producer: any, investmentStats: an
     expectedReturn: campaign.expectedReturn, // Decimal comes as string from DB
     riskLevel: campaign.riskLevel,
     imageUrl: campaign.imageUrl,
+    iconUrl: campaign.iconUrl,
     mapsLink: campaign.mapsLink,
     // Campos para simulador de inversión
     costPerPlant: campaign.costPerPlant, // Decimal comes as string from DB
@@ -39,14 +40,16 @@ const mapCampaignToResponse = (campaign: any, producer: any, investmentStats: an
       title: timeline.title,
       events: timeline.events || []
     } : undefined,
+    isInvestedByUser: isInvestedByUser || false,
   };
 };
 
 export class CampaignService {
   /**
    * Obtiene todas las campañas activas con sus estadísticas de inversión
+   * @param userId - ID del usuario para marcar campañas en las que ya invirtió
    */
-  static async getAllCampaigns(): Promise<CampaignResponse[]> {
+  static async getAllCampaigns(userId?: number): Promise<CampaignResponse[]> {
     try {
       // Obtener campañas con sus productores y cronograma
       const campaignsWithProducers = await db
@@ -64,15 +67,15 @@ export class CampaignService {
       // Obtener estadísticas de inversión para cada campaña
       const campaignIds = campaignsWithProducers.map(row => row.campaign.id);
       
-        const investmentStats = await db
-          .select({
-            campaignId: investments.campaignId,
-            raisedAmount: sql<string>`COALESCE(SUM(${investments.amount}), 0)::text`,
-            investorCount: count(sql`DISTINCT ${investments.userId}`),
-          })
-          .from(investments)
-          .where(sql`${investments.campaignId} IN (${sql.join(campaignIds, sql`, `)})`)
-          .groupBy(investments.campaignId);
+      const investmentStats = await db
+        .select({
+          campaignId: investments.campaignId,
+          raisedAmount: sql<string>`COALESCE(SUM(${investments.amount}), 0)::text`,
+          investorCount: count(sql`DISTINCT ${investments.userId}`),
+        })
+        .from(investments)
+        .where(sql`${investments.campaignId} IN (${sql.join(campaignIds, sql`, `)})`)
+        .groupBy(investments.campaignId);
 
       // Crear un mapa de estadísticas por campaignId
       const statsMap = new Map();
@@ -83,10 +86,22 @@ export class CampaignService {
         });
       });
 
+      // Si hay usuario, obtener sus inversiones para marcar las campañas
+      let userInvestmentIds = new Set<number>();
+      if (userId) {
+        const userInvestments = await db
+          .select({ campaignId: investments.campaignId })
+          .from(investments)
+          .where(eq(investments.userId, userId));
+        
+        userInvestmentIds = new Set(userInvestments.map(inv => inv.campaignId));
+      }
+
       // Mapear los resultados
       return campaignsWithProducers.map(row => {
         const stats = statsMap.get(row.campaign.id) || { raisedAmount: '0.00', investorCount: 0 };
-        return mapCampaignToResponse(row.campaign, row.producer, stats, row.timeline);
+        const isInvestedByUser = userInvestmentIds.has(row.campaign.id);
+        return mapCampaignToResponse(row.campaign, row.producer, stats, row.timeline, isInvestedByUser);
       });
     } catch (error) {
       console.error('Error fetching campaigns:', error);
@@ -253,7 +268,7 @@ export class CampaignService {
   /**
    * Obtiene las inversiones de un usuario con información de las campañas
    */
-  static async getUserInvestments(userEmail: string): Promise<Array<{
+  static async getUserInvestments(userId: number): Promise<Array<{
     id: number;
     amount: string;
     plantCount: number;
@@ -261,13 +276,11 @@ export class CampaignService {
     campaign: CampaignResponse;
   }> | null> {
     try {
-      // Primero obtener el usuario por email
-      const userResult = await db.select().from(users).where(eq(users.email, userEmail)).limit(1);
+      // Verificar que el usuario existe
+      const userResult = await db.select().from(users).where(eq(users.id, userId)).limit(1);
       if (userResult.length === 0) {
         return null;
       }
-
-      const userId = userResult[0].id;
 
       // Obtener inversiones del usuario con información de campañas
       const userInvestments = await db
@@ -275,10 +288,12 @@ export class CampaignService {
           investment: investments,
           campaign: campaigns,
           producer: producers,
+          timeline: campaignTimeline,
         })
         .from(investments)
         .leftJoin(campaigns, eq(investments.campaignId, campaigns.id))
         .leftJoin(producers, eq(campaigns.producerId, producers.id))
+        .leftJoin(campaignTimeline, eq(campaigns.id, campaignTimeline.campaignId))
         .where(eq(investments.userId, userId));
 
       if (userInvestments.length === 0) {
@@ -315,7 +330,7 @@ export class CampaignService {
           }
 
           const stats = statsMap.get(row.campaign.id) || { raisedAmount: '0.00', investorCount: 0 };
-          const campaignResponse = mapCampaignToResponse(row.campaign, row.producer, stats);
+          const campaignResponse = mapCampaignToResponse(row.campaign, row.producer, stats, row.timeline);
 
           return {
             id: row.investment.id,
@@ -327,8 +342,8 @@ export class CampaignService {
         })
         .filter((item): item is NonNullable<typeof item> => item !== null);
     } catch (error) {
-      console.error(`Error fetching user investments for ${userEmail}:`, error);
-      throw new Error(`Failed to fetch user investments for ${userEmail}`);
+      console.error(`Error fetching user investments for user ID ${userId}:`, error);
+      throw new Error(`Failed to fetch user investments for user ID ${userId}`);
     }
   }
 

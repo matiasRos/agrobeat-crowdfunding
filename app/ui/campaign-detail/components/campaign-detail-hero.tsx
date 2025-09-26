@@ -1,7 +1,7 @@
 import { CampaignResponse } from '@/app/types/campaign';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
+import { CampaignProgressCard } from '@/app/ui/shared/components/campaign-progress-card';
 import { ArrowLeft, MapPin, Clock, Users, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -11,7 +11,6 @@ interface CampaignDetailHeroProps {
 }
 
 export function CampaignDetailHero({ campaign }: CampaignDetailHeroProps) {
-  const progressPercentage = (parseFloat(campaign.raisedAmount) / parseFloat(campaign.targetAmount)) * 100;
   
   // Función para formatear el tiempo restante
   const formatTimeRemaining = (closingDate: string, daysLeft: number) => {
@@ -167,19 +166,13 @@ export function CampaignDetailHero({ campaign }: CampaignDetailHeroProps) {
             </div>
 
             {/* Progreso de financiamiento */}
-            <div className="space-y-2 bg-background rounded-lg p-4">
-              <div className="flex justify-between text-sm">
-                <span className="text-black">Progreso de financiamiento</span>
-                <span className="font-medium text-muted-foreground">
-                  {progressPercentage.toFixed(1)}%
-                </span>
-              </div>
-              <Progress value={progressPercentage} className="h-3 bg-gray-200" />
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Recaudado: {formatCurrency(parseFloat(campaign.raisedAmount))}</span>
-                <span className="text-muted-foreground">Meta: {formatCurrency(parseFloat(campaign.targetAmount))}</span>
-              </div>
-            </div>
+            <CampaignProgressCard 
+              raisedAmount={campaign.raisedAmount}
+              targetAmount={campaign.targetAmount}
+              investorCount={campaign.investorCount}
+              title="Progreso de financiamiento"
+              showInvestorCount={false}
+            />
           </div>
         </div>
       </div>

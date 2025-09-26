@@ -14,8 +14,14 @@ export function CampaignTimeline({ campaign, showAsCard = true }: CampaignTimeli
 
   const timeline = campaign.timeline; // Extraer para evitar problemas de TypeScript
 
+  // Función para crear una fecha local sin problemas de zona horaria
+  const createLocalDate = (dateString: string) => {
+    const [year, month, day] = dateString.split('-').map(Number);
+    return new Date(year, month - 1, day); // month - 1 porque los meses en JS van de 0-11
+  };
+
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-PY', {
+    return createLocalDate(dateString).toLocaleDateString('es-PY', {
       day: 'numeric',
       month: 'long',
       year: 'numeric'
@@ -23,13 +29,19 @@ export function CampaignTimeline({ campaign, showAsCard = true }: CampaignTimeli
   };
 
   const isEventPast = (dateString: string) => {
-    return new Date(dateString) < new Date();
+    const eventDate = createLocalDate(dateString);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Resetear horas para comparar solo fechas
+    eventDate.setHours(0, 0, 0, 0);
+    return eventDate < today;
   };
 
   const isEventToday = (dateString: string) => {
-    const eventDate = new Date(dateString);
+    const eventDate = createLocalDate(dateString);
     const today = new Date();
-    return eventDate.toDateString() === today.toDateString();
+    eventDate.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+    return eventDate.getTime() === today.getTime();
   };
 
   const timelineContent = (
