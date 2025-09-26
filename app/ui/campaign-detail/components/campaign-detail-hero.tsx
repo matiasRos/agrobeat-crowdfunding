@@ -162,6 +162,9 @@ export function CampaignDetailHero({ campaign }: CampaignDetailHeroProps) {
                   <span className="text-sm opacity-75">Retorno est.</span>
                 </div>
                 <p className="font-semibold">{parseFloat(campaign.expectedReturn)}%</p>
+                <p className="text-xs opacity-75">
+                  Se calcula sobre la utilidad neta esperada
+                </p>
               </div>
             </div>
 

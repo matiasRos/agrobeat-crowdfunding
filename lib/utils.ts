@@ -114,3 +114,74 @@ export function formatCurrency(amount: number): string {
     minimumFractionDigits: 0,
   }).format(amount);
 }
+
+/**
+ * Interfaz para los cálculos de retorno de inversión
+ */
+export interface InvestmentCalculation {
+  investmentAmount: number;
+  estimatedIncome: number;
+  netProfit: number;
+  projectedReturn: number;
+  totalReturn: number;
+}
+
+/**
+ * Calcula el retorno de inversión basado en utilidad neta esperada
+ * @param plantCount - Cantidad de plantas
+ * @param costPerPlant - Costo por planta
+ * @param marketPrice - Precio promedio en el mercado por planta
+ * @param expectedReturnPercentage - Porcentaje de retorno esperado (como decimal, ej: 0.20 para 20%)
+ * @returns Objeto con todos los cálculos de la inversión
+ */
+export function calculateInvestmentReturn(
+  plantCount: number,
+  costPerPlant: number,
+  marketPrice: number,
+  expectedReturnPercentage: number
+): InvestmentCalculation {
+  // Calcular inversión total
+  const investmentAmount = plantCount * costPerPlant;
+  
+  // Calcular ingreso estimado total: plantas × precio de mercado
+  const estimatedIncome = plantCount * marketPrice;
+  
+  // Calcular utilidad neta: ingreso estimado - inversión total
+  const netProfit = estimatedIncome - investmentAmount;
+  
+  // Calcular ganancia esperada: porcentaje esperado × utilidad neta
+  const projectedReturn = netProfit * expectedReturnPercentage;
+  
+  // Calcular retorno total: inversión + ganancia
+  const totalReturn = investmentAmount + projectedReturn;
+  
+  return {
+    investmentAmount,
+    estimatedIncome,
+    netProfit,
+    projectedReturn,
+    totalReturn
+  };
+}
+
+/**
+ * Calcula el retorno de inversión para una campaña específica
+ * @param plantCount - Cantidad de plantas
+ * @param campaign - Datos de la campaña
+ * @returns Objeto con todos los cálculos de la inversión
+ */
+export function calculateCampaignInvestmentReturn(
+  plantCount: number,
+  campaign: { costPerPlant: string; marketPrice: string; expectedReturn: string }
+): InvestmentCalculation {
+  const costPerPlant = parseFloat(campaign.costPerPlant);
+  const marketPrice = parseFloat(campaign.marketPrice);
+  const expectedReturnPercentage = parseFloat(campaign.expectedReturn) / 100;
+  
+  return calculateInvestmentReturn(
+    plantCount,
+    costPerPlant,
+    marketPrice,
+    expectedReturnPercentage
+  );
+}

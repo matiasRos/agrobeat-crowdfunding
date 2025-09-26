@@ -23,6 +23,7 @@ export interface CampaignResponse {
   plantsPerM2: number;
   minPlants: number;
   maxPlants: number;
+  marketPrice: string;
   producer: {
     name: string;
     experience: number;
@@ -57,6 +58,7 @@ export interface CampaignInput {
   plantsPerM2: number;
   minPlants: number;
   maxPlants: number;
+  marketPrice: number;
   // Datos del productor
   producerName: string;
   producerExperience: number;

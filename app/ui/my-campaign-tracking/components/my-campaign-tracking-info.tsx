@@ -4,6 +4,7 @@ import { Separator } from '@/components/ui/separator';
 import { CampaignTimeline } from '@/app/ui/campaign-detail/components/campaign-timeline';
 import { ProducerInfoCard } from '@/app/ui/shared/components/producer-info-card';
 import { CampaignDetailsCard } from '@/app/ui/shared/components/campaign-details-card';
+import { calculateCampaignInvestmentReturn, formatCurrency } from '@/lib/utils';
 import {
   Sprout,
   TrendingUp,
@@ -26,19 +27,9 @@ interface MyCampaignTrackingInfoProps {
 }
 
 export function MyCampaignTrackingInfo({ campaign, userInvestment }: MyCampaignTrackingInfoProps) {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-PY', {
-      style: 'currency',
-      currency: 'PYG',
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  const calculateExpectedReturn = () => {
-    const investment = parseFloat(userInvestment.amount);
-    const returnRate = parseFloat(campaign.expectedReturn) / 100;
-    return investment * returnRate;
-  };
+  // Usar función utilitaria para calcular el retorno
+  const calculations = calculateCampaignInvestmentReturn(userInvestment.plantCount, campaign);
+  const { investmentAmount, estimatedIncome, netProfit, projectedReturn, totalReturn } = calculations;
 
   const calculateMyParticipation = () => {
     const myInvestment = parseFloat(userInvestment.amount);
@@ -94,11 +85,46 @@ export function MyCampaignTrackingInfo({ campaign, userInvestment }: MyCampaignT
                 <span className="text-sm text-purple-700 font-medium">Retorno Esperado</span>
               </div>
               <p className="text-2xl font-bold text-purple-800">
-                {formatCurrency(calculateExpectedReturn())}
+                {formatCurrency(projectedReturn)}
               </p>
               <p className="text-xs text-purple-600">
-                {parseFloat(campaign.expectedReturn)}% de retorno
+                {parseFloat(campaign.expectedReturn)}% de utilidad neta esperada
               </p>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Desglose del cálculo de retorno */}
+          <div className="bg-muted rounded-lg p-4 space-y-3">
+            <h4 className="font-medium text-sm">Desglose del Retorno Esperado</h4>
+            <div className="text-sm space-y-2">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Precio promedio por planta en el mercado:</span>
+                <span className="font-medium">{formatCurrency(parseFloat(campaign.marketPrice))}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Ingreso estimado ({userInvestment.plantCount} plantas):</span>
+                <span className="font-medium">{formatCurrency(estimatedIncome)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Menos inversión inicial:</span>
+                <span className="font-medium text-red-600">-{formatCurrency(parseFloat(userInvestment.amount))}</span>
+              </div>
+              <Separator className="my-2" />
+              <div className="flex justify-between">
+                <span className="font-medium">Utilidad neta:</span>
+                <span className="font-bold">{formatCurrency(netProfit)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Ganancia ({parseFloat(campaign.expectedReturn)}% de utilidad neta):</span>
+                <span className="font-bold text-green-600">{formatCurrency(projectedReturn)}</span>
+              </div>
+              <Separator className="my-2" />
+              <div className="flex justify-between">
+                <span className="font-medium">Total a recibir:</span>
+                <span className="font-bold text-lg">{formatCurrency(totalReturn)}</span>
+              </div>
             </div>
           </div>
 

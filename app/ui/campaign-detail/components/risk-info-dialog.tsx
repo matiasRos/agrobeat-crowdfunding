@@ -109,7 +109,7 @@ export function RiskInfoDialog({ riskLevel }: RiskInfoDialogProps) {
               <div className="flex items-center gap-2">
                 <TrendingDown className="h-4 w-4 text-muted-foreground" />
                 <span>
-                  <strong>Escenario desfavorable:</strong> Si el precio baja un 10%, el retorno sería del 12%.
+                  <strong>Escenario desfavorable:</strong>  Si el precio baja un 10%, el retorno sería del 12%.
                 </span>
               </div>
             </div>

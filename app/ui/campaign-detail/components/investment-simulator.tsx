@@ -10,6 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { createInvestment } from '@/app/actions/investments';
 import { checkExistingInvestment } from '@/app/actions/check-investment';
+import { calculateCampaignInvestmentReturn, formatCurrency } from '@/lib/utils';
 import {
   Calculator,
   Sprout,
@@ -43,20 +44,11 @@ export function InvestmentSimulator({ campaign }: InvestmentSimulatorProps) {
     maxPlants: campaign.maxPlants,
   };
 
-  // Cálculos
-  const investmentAmount = plantCount * cropConfig.costPerPlant;
-  const expectedReturn = parseFloat(campaign.expectedReturn) / 100;
-  const projectedReturn = investmentAmount * expectedReturn;
-  const totalReturn = investmentAmount + projectedReturn;
+  // Cálculos basados en utilidad neta esperada usando función utilitaria
+  const calculations = calculateCampaignInvestmentReturn(plantCount, campaign);
+  const { investmentAmount, estimatedIncome, netProfit, projectedReturn, totalReturn } = calculations;
+  
   const areaNeeded = plantCount / cropConfig.plantsPerM2;
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-PY', {
-      style: 'currency',
-      currency: 'PYG',
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
 
   // Verificar si el usuario ya tiene una inversión en esta campaña
   useEffect(() => {
@@ -191,25 +183,55 @@ export function InvestmentSimulator({ campaign }: InvestmentSimulatorProps) {
                 </div>
               </div>
 
-              <div className="bg-muted border border-muted rounded-lg p-4 space-y-3">
+              <div className="bg-muted border border-muted rounded-lg p-4 space-y-4">
                 <div className="flex items-center gap-2">
                   <TrendingUp className="h-4 w-4 text-green-600" />
-                  <span className="font-medium ">Proyección de Retornos</span>
+                  <span className="font-medium">Proyección de Retornos</span>
                 </div>
 
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-sm">Ganancia esperada ({parseFloat(campaign.expectedReturn)}%):</span>
-                    <span className="font-bold text-lg">
-                      {formatCurrency(projectedReturn)}
-                    </span>
+                {/* Desglose del cálculo */}
+                <div className="space-y-3">
+                  <div className="text-sm space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Precio promedio por planta en el mercado:</span>
+                      <span className="font-medium">{formatCurrency(parseFloat(campaign.marketPrice))}</span>
+                    </div>
+                    
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Ingreso estimado ({plantCount} plantas):</span>
+                      <span className="font-medium">{formatCurrency(estimatedIncome)}</span>
+                    </div>
+                    
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Menos inversión inicial:</span>
+                      <span className="font-medium text-red-600">-{formatCurrency(investmentAmount)}</span>
+                    </div>
+                    
+                    <Separator className="my-2" />
+                    
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium">Utilidad neta:</span>
+                      <span className="font-bold">{formatCurrency(netProfit)}</span>
+                    </div>
                   </div>
 
-                  <div className="flex justify-between">
-                    <span className="text-sm">Retorno total:</span>
-                    <span className="font-bold text-lg">
-                      {formatCurrency(totalReturn)}
-                    </span>
+                  <Separator />
+
+                  {/* Ganancia esperada */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm">Ganancia esperada ({parseFloat(campaign.expectedReturn)}% de utilidad neta):</span>
+                      <span className="font-bold text-lg">
+                        {formatCurrency(projectedReturn)}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">Retorno total a recibir:</span>
+                      <span className="font-bold text-xl">
+                        {formatCurrency(totalReturn)}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -277,7 +299,7 @@ export function InvestmentSimulator({ campaign }: InvestmentSimulatorProps) {
           )}
           {!existingInvestment?.hasInvestment && (
           <p className="text-xs text-muted-foreground text-center">
-            * Esta es una simulación. Los retornos reales pueden variar.
+            * Simulación basada en utilidad neta esperada según precio de mercado actual. Los retornos reales pueden variar según condiciones del mercado y la producción.
           </p>
           )}
         </CardContent>

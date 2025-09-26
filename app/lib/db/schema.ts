@@ -56,6 +56,7 @@ export const campaigns = pgTable('campaigns', {
   plantsPerM2: integer('plants_per_m2').notNull(),
   minPlants: integer('min_plants').notNull(),
   maxPlants: integer('max_plants').notNull(),
+  marketPrice: decimal('market_price', { precision: 10, scale: 2 }).notNull().default('0'),
   
   // Foreign key al productor
   producerId: integer('producer_id').references(() => producers.id).notNull(),

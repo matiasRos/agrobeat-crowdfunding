@@ -32,6 +32,7 @@ const mapCampaignToResponse = (campaign: any, producer: any, investmentStats: an
     plantsPerM2: campaign.plantsPerM2,
     minPlants: campaign.minPlants,
     maxPlants: campaign.maxPlants,
+    marketPrice: campaign.marketPrice, // Decimal comes as string from DB
     producer: {
       name: producer.name,
       experience: producer.experience,
