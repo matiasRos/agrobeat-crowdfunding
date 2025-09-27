@@ -6,7 +6,7 @@ import { db } from '@/app/lib/db';
 import { users, investments } from '@/app/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
-import { sendInvestmentConfirmationEmail } from '@/app/lib/services/email';
+import { sendInvestmentConfirmationEmail, sendAdminInvestmentNotification } from '@/app/lib/services/email';
 
 export interface InvestmentResult {
   success: boolean;
@@ -85,20 +85,32 @@ export async function createInvestment(
       plantCount
     );
 
-    // Enviar email de confirmación
+    // Enviar emails de confirmación y notificación admin
+    const emailData = {
+      userEmail: session.user.email,
+      userName: userName,
+      campaignTitle: updatedCampaign.title,
+      plantCount: plantCount,
+      investmentAmount: investmentAmount,
+      campaignId: campaignId
+    };
+
     try {
-      await sendInvestmentConfirmationEmail({
-        userEmail: session.user.email,
-        userName: userName,
-        campaignTitle: updatedCampaign.title,
-        plantCount: plantCount,
-        investmentAmount: investmentAmount,
-        campaignId: campaignId
-      });
+      // Enviar email de confirmación al usuario
+      await sendInvestmentConfirmationEmail(emailData);
       console.log('Email de confirmación enviado exitosamente');
     } catch (emailError) {
       console.error('Error enviando email de confirmación:', emailError);
       // No fallar la inversión si el email falla
+    }
+
+    try {
+      // Enviar notificación a administradores
+      await sendAdminInvestmentNotification(emailData);
+      console.log('Email de notificación admin enviado exitosamente');
+    } catch (adminEmailError) {
+      console.error('Error enviando email de notificación admin:', adminEmailError);
+      // No fallar la inversión si el email admin falla
     }
 
     // Revalidar las páginas para mostrar datos actualizados
