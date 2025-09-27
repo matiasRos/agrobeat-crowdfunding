@@ -169,6 +169,8 @@ export function LoginForm({
               alt="AgroBeat"
               className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
             />
+            {/* Backdrop negro claro */}
+            <div className="absolute inset-0 bg-black/20"></div>
           </div>
         </CardContent>
       </Card>

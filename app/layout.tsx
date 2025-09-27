@@ -16,7 +16,7 @@ export const metadata = {
     title,
     description,
   },
-  metadataBase: new URL('https://agrobeat-crowdfunding-vym1.vercel.app/'),
+  metadataBase: new URL('https://invertir.agrobeat.com.py/'),
 };
 
 export default function RootLayout({

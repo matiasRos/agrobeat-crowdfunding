@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { CampaignResponse } from '@/app/types/campaign';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,8 +28,11 @@ interface InvestmentSimulatorProps {
 }
 
 export function InvestmentSimulator({ campaign }: InvestmentSimulatorProps) {
+  const router = useRouter();
+  
   // Usar valores iniciales basados en la configuración mínima de la campaña
   const [plantCount, setPlantCount] = useState(campaign.minPlants);
+  const [inputValue, setInputValue] = useState(campaign.minPlants.toString());
   const [isPending, startTransition] = useTransition();
   const [investmentResult, setInvestmentResult] = useState<{ success: boolean; message: string } | null>(null);
   const [existingInvestment, setExistingInvestment] = useState<{
@@ -60,19 +64,35 @@ export function InvestmentSimulator({ campaign }: InvestmentSimulatorProps) {
     checkInvestment();
   }, [campaign.id]);
 
+
   const handlePlantCountChange = (value: string) => {
-    const numValue = parseInt(value) || 0;
-    // Permitir escribir libremente sin limitar durante la escritura
-    setPlantCount(numValue);
+    // Permitir escribir libremente, incluyendo strings vacíos
+    setInputValue(value);
+    
+    // Solo actualizar plantCount si hay un número válido
+    const numValue = parseInt(value);
+    if (!isNaN(numValue) && numValue > 0) {
+      setPlantCount(numValue);
+    }
   };
 
   const handleInputBlur = () => {
+    // Si el campo está vacío o tiene un valor inválido, usar el mínimo
+    const numValue = parseInt(inputValue);
+    if (isNaN(numValue) || numValue < cropConfig.minPlants) {
+      const newValue = cropConfig.minPlants;
+      setPlantCount(newValue);
+      setInputValue(newValue.toString());
+      return;
+    }
+    
     // Aplicar límites solo cuando el usuario termine de escribir (pierde el foco)
     const clampedValue = Math.max(
       cropConfig.minPlants,
-      Math.min(cropConfig.maxPlants, plantCount)
+      Math.min(cropConfig.maxPlants, numValue)
     );
     setPlantCount(clampedValue);
+    setInputValue(clampedValue.toString());
   };
 
   const handleInvestment = () => {
@@ -81,6 +101,12 @@ export function InvestmentSimulator({ campaign }: InvestmentSimulatorProps) {
         const result = await createInvestment(campaign.id, plantCount, investmentAmount);
         setInvestmentResult(result);
 
+        // Si la inversión fue exitosa, redirigir después de 3 segundos
+        if (result.success) {
+          setTimeout(() => {
+            router.push('/dashboard');
+          }, 3000);
+        }
       } catch (error) {
         setInvestmentResult({
           success: false,
@@ -121,7 +147,11 @@ export function InvestmentSimulator({ campaign }: InvestmentSimulatorProps) {
                   variant="outline"
                   size="icon"
                   className="h-8 w-8 shrink-0 rounded-full"
-                  onClick={() => setPlantCount(Math.min(cropConfig.maxPlants, plantCount - 1))}
+                  onClick={() => {
+                    const newValue = Math.max(cropConfig.minPlants, plantCount - 1);
+                    setPlantCount(newValue);
+                    setInputValue(newValue.toString());
+                  }}
                   disabled={plantCount <= cropConfig.minPlants}
                 >
                   <Minus />
@@ -130,7 +160,7 @@ export function InvestmentSimulator({ campaign }: InvestmentSimulatorProps) {
                 <Input
                   id="plant-count"
                   type="number"
-                  value={plantCount}
+                  value={inputValue}
                   onChange={(e) => handlePlantCountChange(e.target.value)}
                   onBlur={handleInputBlur}
                   min={cropConfig.minPlants}
@@ -141,7 +171,11 @@ export function InvestmentSimulator({ campaign }: InvestmentSimulatorProps) {
                   variant="outline"
                   size="icon"
                   className="h-8 w-8 shrink-0 rounded-full"
-                  onClick={() => setPlantCount(Math.max(cropConfig.minPlants, plantCount + 1))}
+                  onClick={() => {
+                    const newValue = Math.min(cropConfig.maxPlants, plantCount + 1);
+                    setPlantCount(newValue);
+                    setInputValue(newValue.toString());
+                  }}
                   disabled={plantCount >= cropConfig.maxPlants}
                 >
                   <Plus />
@@ -193,7 +227,7 @@ export function InvestmentSimulator({ campaign }: InvestmentSimulatorProps) {
                 <div className="space-y-3">
                   <div className="text-sm space-y-2">
                     <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">Precio promedio por planta en el mercado:</span>
+                      <span className="text-muted-foreground">Precio promedio de venta por unidad:</span>
                       <span className="font-medium">{formatCurrency(parseFloat(campaign.marketPrice))}</span>
                     </div>
                     
@@ -267,7 +301,14 @@ export function InvestmentSimulator({ campaign }: InvestmentSimulatorProps) {
                 ) : (
                   <AlertTriangle className="h-5 w-5" />
                 )}
-                <span className="font-medium">{investmentResult.message}</span>
+                <div className="flex-1">
+                  <span className="font-medium">{investmentResult.message}</span>
+                  {investmentResult.success && (
+                    <div className="mt-2 text-sm">
+                      Redirigiendo al dashboard en unos segundos...
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -292,7 +333,7 @@ export function InvestmentSimulator({ campaign }: InvestmentSimulatorProps) {
               ) : (
                 <div className="flex items-center gap-2">
                   <DollarSign className="h-4 w-4" />
-                  Reservar Inversión
+                  Reservar {plantCount} plantas
                 </div>
               )}
             </Button>

@@ -18,6 +18,7 @@ export interface CampaignResponse {
   imageUrl: string;
   iconUrl?: string;
   mapsLink?: string;
+  isActive: boolean;
   // Campos para simulador de inversión
   costPerPlant: string;
   plantsPerM2: number;

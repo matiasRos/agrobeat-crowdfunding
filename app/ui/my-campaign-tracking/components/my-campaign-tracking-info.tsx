@@ -44,20 +44,20 @@ export function MyCampaignTrackingInfo({ campaign, userInvestment }: MyCampaignT
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Target className="h-5 w-5" />
-            Resumen de Mi Inversión
+            Resumen de mi inversión
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid gap-4 md:grid-cols-3">
-            <div className="space-y-2 p-4 bg-green-50 rounded-lg border border-green-200">
+            <div className="space-y-2 p-4 bg-gray-50 rounded-lg border border-gray-200">
               <div className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4 text-green-600" />
-                <span className="text-sm text-green-700 font-medium">Monto Invertido</span>
+                <DollarSign className="h-4 w-4 text-gray-600" />
+                <span className="text-sm text-gray-700 font-medium">Monto invertido</span>
               </div>
-              <p className="text-2xl font-bold text-green-800">
+              <p className="text-2xl font-bold text-gray-800">
                 {formatCurrency(parseFloat(userInvestment.amount))}
               </p>
-              <p className="text-xs text-green-600">
+              <p className="text-xs text-gray-600">
                 Invertido el {new Date(userInvestment.createdAt).toLocaleDateString('es-PY', {
                   day: 'numeric',
                   month: 'long',
@@ -69,7 +69,7 @@ export function MyCampaignTrackingInfo({ campaign, userInvestment }: MyCampaignT
             <div className="space-y-2 p-4 bg-blue-50 rounded-lg border border-blue-200">
               <div className="flex items-center gap-2">
                 <Sprout className="h-4 w-4 text-blue-600" />
-                <span className="text-sm text-blue-700 font-medium">Plantas Reservadas</span>
+                <span className="text-sm text-blue-700 font-medium">Plantas reservadas</span>
               </div>
               <p className="text-2xl font-bold text-blue-800">
                 {userInvestment.plantCount}
@@ -79,15 +79,15 @@ export function MyCampaignTrackingInfo({ campaign, userInvestment }: MyCampaignT
               </p>
             </div>
 
-            <div className="space-y-2 p-4 bg-purple-50 rounded-lg border border-purple-200">
+            <div className="space-y-2 p-4 bg-green-50 rounded-lg border border-green-200">
               <div className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-purple-600" />
-                <span className="text-sm text-purple-700 font-medium">Retorno Esperado</span>
+                <TrendingUp className="h-4 w-4 text-green-600" />
+                <span className="text-sm text-green-700 font-medium">Retorno esperado</span>
               </div>
-              <p className="text-2xl font-bold text-purple-800">
+              <p className="text-2xl font-bold text-green-800">
                 {formatCurrency(projectedReturn)}
               </p>
-              <p className="text-xs text-purple-600">
+              <p className="text-xs text-green-600">
                 {parseFloat(campaign.expectedReturn)}% de utilidad neta esperada
               </p>
             </div>
@@ -97,10 +97,10 @@ export function MyCampaignTrackingInfo({ campaign, userInvestment }: MyCampaignT
 
           {/* Desglose del cálculo de retorno */}
           <div className="bg-muted rounded-lg p-4 space-y-3">
-            <h4 className="font-medium text-sm">Desglose del Retorno Esperado</h4>
+            <h4 className="font-medium text-sm">Desglose del retorno esperado</h4>
             <div className="text-sm space-y-2">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Precio promedio por planta en el mercado:</span>
+                <span className="text-muted-foreground">Precio promedio de venta por unidad:</span>
                 <span className="font-medium">{formatCurrency(parseFloat(campaign.marketPrice))}</span>
               </div>
               <div className="flex justify-between">
@@ -134,7 +134,7 @@ export function MyCampaignTrackingInfo({ campaign, userInvestment }: MyCampaignT
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <PieChart className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Mi Participación en la Campaña</span>
+                <span className="text-sm text-muted-foreground">Mi participación en la campaña</span>
               </div>
               <p className="text-xl font-bold">
                 {calculateMyParticipation().toFixed(2)}%
@@ -147,7 +147,7 @@ export function MyCampaignTrackingInfo({ campaign, userInvestment }: MyCampaignT
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Estado de la Campaña</span>
+                <span className="text-sm text-muted-foreground">Estado de la campaña</span>
               </div>
               <p className={`text-xl font-bold ${
                 campaign.daysLeft <= 0 ? 'text-green-600' :

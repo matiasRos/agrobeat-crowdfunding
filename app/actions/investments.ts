@@ -6,6 +6,7 @@ import { db } from '@/app/lib/db';
 import { users, investments } from '@/app/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
+import { sendInvestmentConfirmationEmail } from '@/app/lib/services/email';
 
 export interface InvestmentResult {
   success: boolean;
@@ -29,7 +30,10 @@ export async function createInvestment(
     }
 
     // Obtener el ID del usuario desde la base de datos usando el email
-    const userResult = await db.select({ id: users.id }).from(users).where(eq(users.email, session.user.email!)).limit(1);
+    const userResult = await db.select({ 
+      id: users.id, 
+      name: users.name 
+    }).from(users).where(eq(users.email, session.user.email!)).limit(1);
     
     if (userResult.length === 0) {
       return {
@@ -39,6 +43,7 @@ export async function createInvestment(
     }
     
     const userId = userResult[0].id;
+    const userName = userResult[0].name || session.user.name || 'Usuario';
 
     // Verificar si el usuario ya tiene una inversión en esta campaña
     const existingInvestment = await db
@@ -80,6 +85,22 @@ export async function createInvestment(
       plantCount
     );
 
+    // Enviar email de confirmación
+    try {
+      await sendInvestmentConfirmationEmail({
+        userEmail: session.user.email,
+        userName: userName,
+        campaignTitle: updatedCampaign.title,
+        plantCount: plantCount,
+        investmentAmount: investmentAmount,
+        campaignId: campaignId
+      });
+      console.log('Email de confirmación enviado exitosamente');
+    } catch (emailError) {
+      console.error('Error enviando email de confirmación:', emailError);
+      // No fallar la inversión si el email falla
+    }
+
     // Revalidar las páginas para mostrar datos actualizados
     revalidatePath('/dashboard');
     revalidatePath(`/campaigns/${campaignId}`);
@@ -94,7 +115,7 @@ export async function createInvestment(
 
     return {
       success: true,
-      message: `Reserva exitosa! Has reservado ${plantCount} plantas por un total de ${formatCurrency(investmentAmount)}. Te contactaremos pronto.`,
+      message: `Reserva exitosa! Has reservado ${plantCount} plantas por un total de ${formatCurrency(investmentAmount)}. Te contactaremos pronto y recibirás un email de confirmación.`,
       campaignId: updatedCampaign.id
     };
 

@@ -27,6 +27,7 @@ const mapCampaignToResponse = (campaign: any, producer: any, investmentStats: an
     imageUrl: campaign.imageUrl,
     iconUrl: campaign.iconUrl,
     mapsLink: campaign.mapsLink,
+    isActive: campaign.isActive,
     // Campos para simulador de inversión
     costPerPlant: campaign.costPerPlant, // Decimal comes as string from DB
     plantsPerM2: campaign.plantsPerM2,
@@ -125,7 +126,7 @@ export class CampaignService {
         .from(campaigns)
         .leftJoin(producers, eq(campaigns.producerId, producers.id))
         .leftJoin(campaignTimeline, eq(campaigns.id, campaignTimeline.campaignId))
-        .where(eq(campaigns.id, id))
+        .where(and(eq(campaigns.id, id), eq(campaigns.isActive, true)))
         .limit(1);
 
       if (result.length === 0) {
@@ -295,7 +296,7 @@ export class CampaignService {
         .leftJoin(campaigns, eq(investments.campaignId, campaigns.id))
         .leftJoin(producers, eq(campaigns.producerId, producers.id))
         .leftJoin(campaignTimeline, eq(campaigns.id, campaignTimeline.campaignId))
-        .where(eq(investments.userId, userId));
+        .where(and(eq(investments.userId, userId), eq(campaigns.isActive, true)));
 
       if (userInvestments.length === 0) {
         return [];
@@ -363,6 +364,12 @@ export class CampaignService {
         const userResult = await tx.select().from(users).where(eq(users.id, userId)).limit(1);
         if (userResult.length === 0) {
           throw new Error('User not found');
+        }
+
+        // Verificar que la campaña existe y está activa
+        const campaignCheck = await tx.select().from(campaigns).where(and(eq(campaigns.id, campaignId), eq(campaigns.isActive, true))).limit(1);
+        if (campaignCheck.length === 0) {
+          throw new Error('Campaign not found or inactive');
         }
 
         // Crear inversión

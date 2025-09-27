@@ -93,28 +93,6 @@ export function RiskInfoDialog({ riskLevel }: RiskInfoDialogProps) {
             </div>
           </div>
 
-          {/* Escenarios de retorno */}
-          <div className="space-y-3">
-            <h4 className="font-medium text-sm flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
-              Escenarios de Retorno
-            </h4>
-            <div className="space-y-2 text-sm">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                <span>
-                  <strong>Escenario esperado:</strong> El retorno esperado es del 15% al 22%, según el precio de venta de mercado en cosecha.
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <TrendingDown className="h-4 w-4 text-muted-foreground" />
-                <span>
-                  <strong>Escenario desfavorable:</strong>  Si el precio baja un 10%, el retorno sería del 12%.
-                </span>
-              </div>
-            </div>
-          </div>
-
           {/* Factores de riesgo */}
           <div className="space-y-3">
             <h4 className="font-medium text-sm flex items-center gap-2">

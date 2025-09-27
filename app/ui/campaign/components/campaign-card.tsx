@@ -134,7 +134,7 @@ export function CampaignCard({ campaign}: CampaignCardProps) {
               <TrendingUp className="h-3 w-3 text-muted-foreground" />
               <span className="text-sm font-medium">{parseFloat(campaign.expectedReturn)}%</span>
             </div>
-            <p className="text-xs text-muted-foreground">Retorno est.</p>
+            <p className="text-xs text-muted-foreground">de la rentabilidad</p>
           </div>
         </div>
 
