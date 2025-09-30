@@ -130,7 +130,7 @@ export async function createInvestment(
       campaignId: campaignId
     };
 
-   /* try {
+    try {
       // Enviar email de confirmación al usuario
       await sendInvestmentConfirmationEmail(emailData);
       console.log('Email de confirmación enviado exitosamente');
@@ -146,7 +146,7 @@ export async function createInvestment(
     } catch (adminEmailError) {
       console.error('Error enviando email de notificación admin:', adminEmailError);
       // No fallar la inversión si el email admin falla
-    }*/
+    }
 
     // Revalidar las páginas para mostrar datos actualizados
     revalidatePath('/dashboard');
