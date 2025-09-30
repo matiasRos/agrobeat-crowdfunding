@@ -30,6 +30,9 @@ interface InvestmentSimulatorProps {
 export function InvestmentSimulator({ campaign }: InvestmentSimulatorProps) {
   const router = useRouter();
   
+  // Verificar si la campaña está cerrada
+  const isCampaignClosed = campaign.daysLeft <= 0;
+  
   // Usar valores iniciales basados en la configuración mínima de la campaña
   const [plantCount, setPlantCount] = useState(campaign.minPlants);
   const [inputValue, setInputValue] = useState(campaign.minPlants.toString());
@@ -121,13 +124,19 @@ export function InvestmentSimulator({ campaign }: InvestmentSimulatorProps) {
       {/* Simulador principal */}
       <Card >
         <CardHeader>
-          {!existingInvestment?.hasInvestment && (
+          {isCampaignClosed && (
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-500" />
+              Campaña Cerrada
+            </CardTitle>
+          )}
+          {!isCampaignClosed && !existingInvestment?.hasInvestment && (
             <CardTitle className="flex items-center gap-2">
               <Calculator className="h-5 w-5" />
               Simulador de Inversión
             </CardTitle>
           )}
-          {existingInvestment?.hasInvestment && (
+          {!isCampaignClosed && existingInvestment?.hasInvestment && (
             <CardTitle className="flex items-center gap-2">
               <Calculator className="h-5 w-5" />
               Detalles de la inversión
@@ -135,8 +144,26 @@ export function InvestmentSimulator({ campaign }: InvestmentSimulatorProps) {
           )}
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Mensaje de campaña cerrada */}
+          {isCampaignClosed && (
+            <div className="rounded-lg p-4 border bg-red-50 border-red-200 text-red-800">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertTriangle className="h-5 w-5" />
+                <span className="font-medium">Esta campaña ya está cerrada</span>
+              </div>
+              <div className="text-sm space-y-1">
+                <p>El período de reservas finalizó el {new Date(campaign.closingDate).toLocaleDateString('es-PY', {
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric'
+                })}.</p>
+                <p>La campaña ahora está en fase de producción. Si ya tienes una reserva activa, puedes hacer seguimiento desde tu dashboard.</p>
+              </div>
+            </div>
+          )}
+
           {/* Input de cantidad de plantas */}
-          {!existingInvestment?.hasInvestment && (
+          {!isCampaignClosed && !existingInvestment?.hasInvestment && (
             <div className="space-y-4">
               <Label htmlFor="plant-count" className="flex items-center gap-2">
                 <Sprout className="h-4 w-4" />
@@ -199,7 +226,7 @@ export function InvestmentSimulator({ campaign }: InvestmentSimulatorProps) {
               </div>
             </div>
           )}
-          {!existingInvestment?.hasInvestment && (
+          {!isCampaignClosed && !existingInvestment?.hasInvestment && (
             <div className="space-y-4">
               <div className="grid gap-3">
                 <div className="flex justify-between items-center">
@@ -274,8 +301,8 @@ export function InvestmentSimulator({ campaign }: InvestmentSimulatorProps) {
           )}
           <Separator />
 
-          {/* Inversión existente */}
-          {existingInvestment?.hasInvestment && existingInvestment.investment && (
+          {/* Inversión existente - campaña activa */}
+          {!isCampaignClosed && existingInvestment?.hasInvestment && existingInvestment.investment && (
             <div className="rounded-lg p-4 border bg-green-50 border-none text-green-800">
               <div className="flex items-center gap-2 mb-2">
                 <CheckCircle className="h-5 w-5" />
@@ -285,6 +312,22 @@ export function InvestmentSimulator({ campaign }: InvestmentSimulatorProps) {
                 <p><strong>Plantas reservadas:</strong> {existingInvestment.investment.plantCount}</p>
                 <p><strong>Monto invertido:</strong> {formatCurrency(parseFloat(existingInvestment.investment.amount))}</p>
                 <p><strong>Fecha de reserva:</strong> {new Date(existingInvestment.investment.investedAt).toLocaleDateString('es-PY')}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Inversión existente - campaña cerrada */}
+          {isCampaignClosed && existingInvestment?.hasInvestment && existingInvestment.investment && (
+            <div className="rounded-lg p-4 border bg-blue-50 border-blue-200 text-blue-800">
+              <div className="flex items-center gap-2 mb-2">
+                <CheckCircle className="h-5 w-5" />
+                <span className="font-medium">Tu reserva está en producción</span>
+              </div>
+              <div className="text-sm space-y-1">
+                <p><strong>Plantas reservadas:</strong> {existingInvestment.investment.plantCount}</p>
+                <p><strong>Monto invertido:</strong> {formatCurrency(parseFloat(existingInvestment.investment.amount))}</p>
+                <p><strong>Fecha de reserva:</strong> {new Date(existingInvestment.investment.investedAt).toLocaleDateString('es-PY')}</p>
+                <p className="mt-2 font-medium">Puedes hacer seguimiento del progreso desde tu dashboard.</p>
               </div>
             </div>
           )}
@@ -314,7 +357,7 @@ export function InvestmentSimulator({ campaign }: InvestmentSimulatorProps) {
           )}
 
           {/* Botón de inversión */}
-          {!existingInvestment?.hasInvestment && (
+          {!isCampaignClosed && !existingInvestment?.hasInvestment && (
             <Button
               onClick={handleInvestment}
               disabled={
@@ -338,7 +381,7 @@ export function InvestmentSimulator({ campaign }: InvestmentSimulatorProps) {
               )}
             </Button>
           )}
-          {!existingInvestment?.hasInvestment && (
+          {!isCampaignClosed && !existingInvestment?.hasInvestment && (
           <p className="text-xs text-muted-foreground text-center">
             * Simulación basada en utilidad neta esperada según precio de mercado actual. Los retornos reales pueden variar según condiciones del mercado y la producción.
           </p>

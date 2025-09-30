@@ -62,6 +62,23 @@ export async function createInvestment(
       };
     }
 
+    // Obtener información de la campaña para validaciones
+    const campaignResult = await CampaignService.getCampaignById(campaignId);
+    if (!campaignResult) {
+      return {
+        success: false,
+        message: 'Campaña no encontrada'
+      };
+    }
+
+    // Verificar si la campaña está cerrada
+    if (campaignResult.daysLeft <= 0) {
+      return {
+        success: false,
+        message: 'Esta campaña ya está cerrada. No se pueden realizar más reservas.'
+      };
+    }
+
     // Validaciones básicas
     if (plantCount <= 0) {
       return {
@@ -95,7 +112,7 @@ export async function createInvestment(
       campaignId: campaignId
     };
 
-    try {
+   /* try {
       // Enviar email de confirmación al usuario
       await sendInvestmentConfirmationEmail(emailData);
       console.log('Email de confirmación enviado exitosamente');
@@ -111,7 +128,7 @@ export async function createInvestment(
     } catch (adminEmailError) {
       console.error('Error enviando email de notificación admin:', adminEmailError);
       // No fallar la inversión si el email admin falla
-    }
+    }*/
 
     // Revalidar las páginas para mostrar datos actualizados
     revalidatePath('/dashboard');
