@@ -7,6 +7,7 @@ import { users, investments } from '@/app/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { sendInvestmentConfirmationEmail, sendAdminInvestmentNotification } from '@/app/lib/services/email';
+import { calculatePlantAvailability } from '@/lib/utils';
 
 export interface InvestmentResult {
   success: boolean;
@@ -76,6 +77,23 @@ export async function createInvestment(
       return {
         success: false,
         message: 'Esta campaña ya está cerrada. No se pueden realizar más reservas.'
+      };
+    }
+
+    // Verificar disponibilidad de plantas
+    const availability = calculatePlantAvailability(campaignResult);
+    
+    if (availability.isFullyFunded) {
+      return {
+        success: false,
+        message: 'Esta campaña ya está completamente financiada. No hay más plantas disponibles para reservar.'
+      };
+    }
+
+    if (plantCount > availability.availablePlants) {
+      return {
+        success: false,
+        message: `Solo hay ${availability.availablePlants} plantas disponibles. No puedes reservar ${plantCount} plantas.`
       };
     }
 

@@ -11,7 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { createInvestment } from '@/app/actions/investments';
 import { checkExistingInvestment } from '@/app/actions/check-investment';
-import { calculateCampaignInvestmentReturn, formatCurrency } from '@/lib/utils';
+import { calculateCampaignInvestmentReturn, formatCurrency, calculatePlantAvailability, formatPlantCount } from '@/lib/utils';
 import {
   Calculator,
   Sprout,
@@ -51,6 +51,9 @@ export function InvestmentSimulator({ campaign }: InvestmentSimulatorProps) {
     maxPlants: campaign.maxPlants,
   };
 
+  // Cálculos de disponibilidad de plantas
+  const availability = calculatePlantAvailability(campaign);
+  
   // Cálculos basados en utilidad neta esperada usando función utilitaria
   const calculations = calculateCampaignInvestmentReturn(plantCount, campaign);
   const { investmentAmount, estimatedIncome, netProfit, projectedReturn, totalReturn } = calculations;
@@ -80,7 +83,6 @@ export function InvestmentSimulator({ campaign }: InvestmentSimulatorProps) {
   };
 
   const handleInputBlur = () => {
-    // Si el campo está vacío o tiene un valor inválido, usar el mínimo
     const numValue = parseInt(inputValue);
     if (isNaN(numValue) || numValue < cropConfig.minPlants) {
       const newValue = cropConfig.minPlants;
@@ -89,10 +91,15 @@ export function InvestmentSimulator({ campaign }: InvestmentSimulatorProps) {
       return;
     }
     
-    // Aplicar límites solo cuando el usuario termine de escribir (pierde el foco)
+    // Aplicar límites considerando plantas disponibles
+    const maxAllowed = Math.min(
+      cropConfig.maxPlants,
+      availability.availablePlants
+    );
+    
     const clampedValue = Math.max(
       cropConfig.minPlants,
-      Math.min(cropConfig.maxPlants, numValue)
+      Math.min(maxAllowed, numValue)
     );
     setPlantCount(clampedValue);
     setInputValue(clampedValue.toString());
@@ -199,11 +206,12 @@ export function InvestmentSimulator({ campaign }: InvestmentSimulatorProps) {
                   size="icon"
                   className="h-8 w-8 shrink-0 rounded-full"
                   onClick={() => {
-                    const newValue = Math.min(cropConfig.maxPlants, plantCount + 1);
+                    const maxAllowed = Math.min(cropConfig.maxPlants, availability.availablePlants);
+                    const newValue = Math.min(maxAllowed, plantCount + 1);
                     setPlantCount(newValue);
                     setInputValue(newValue.toString());
                   }}
-                  disabled={plantCount >= cropConfig.maxPlants}
+                 /*disabled={plantCount >= Math.min(cropConfig.maxPlants, availability.availablePlants)}*/
                 >
                   <Plus />
                   <span className="sr-only">Increase</span>
@@ -214,15 +222,26 @@ export function InvestmentSimulator({ campaign }: InvestmentSimulatorProps) {
                 <p>
                   Este es un proyecto piloto con una pequeña parcela para validar el modelo de inversión.
                 </p>
-                <p className={`${plantCount < cropConfig.minPlants || plantCount > cropConfig.maxPlants
-                  ? 'text-red-500'
-                  : 'text-muted-foreground'
+                
+                
+                <p className={`${
+                  plantCount < cropConfig.minPlants || 
+                  plantCount > Math.min(cropConfig.maxPlants, availability.availablePlants)
+                    ? 'text-red-500'
+                    : 'text-muted-foreground'
                   }`}>
-                  Rango permitido: {cropConfig.minPlants} - {cropConfig.maxPlants} plantas
-                  {(plantCount < cropConfig.minPlants || plantCount > cropConfig.maxPlants) && (
+                  Rango permitido: {cropConfig.minPlants} - {Math.min(cropConfig.maxPlants, availability.availablePlants)} plantas
+                  {(plantCount < cropConfig.minPlants || plantCount > Math.min(cropConfig.maxPlants, availability.availablePlants)) && (
                     <span className="block text-red-500">⚠️ Valor fuera del rango permitido</span>
                   )}
                 </p>
+                
+                {availability.isFullyFunded && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-2 text-yellow-800">
+                    <p className="font-medium">🎉 ¡Campaña completamente financiada!</p>
+                    <p className="text-xs">No hay más plantas disponibles para reservar.</p>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -363,6 +382,8 @@ export function InvestmentSimulator({ campaign }: InvestmentSimulatorProps) {
               disabled={
                 isPending ||
                 plantCount < cropConfig.minPlants ||
+                plantCount > availability.availablePlants ||
+                availability.isFullyFunded ||
                 existingInvestment?.hasInvestment
               }
               className="w-full"

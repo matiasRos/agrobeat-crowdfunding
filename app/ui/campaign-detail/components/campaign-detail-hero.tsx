@@ -2,6 +2,7 @@ import { CampaignResponse } from '@/app/types/campaign';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CampaignProgressCard } from '@/app/ui/shared/components/campaign-progress-card';
+import { formatTimeRemaining, formatCurrency, calculateTotalPlantsFromTarget, formatPlantCount } from '@/lib/utils';
 import { ArrowLeft, MapPin, Clock, Users, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -12,47 +13,8 @@ interface CampaignDetailHeroProps {
 
 export function CampaignDetailHero({ campaign }: CampaignDetailHeroProps) {
   
-  // Función para formatear el tiempo restante
-  const formatTimeRemaining = (closingDate: string, daysLeft: number) => {
-    const closing = new Date(closingDate);
-    const now = new Date();
-    
-    if (daysLeft <= 0) {
-      return { text: 'Campaña cerrada', isExpired: true };
-    }
-    
-    if (daysLeft === 1) {
-      return { text: 'Último día', isUrgent: true };
-    }
-    
-    if (daysLeft <= 3) {
-      return { text: `${daysLeft} días restantes`, isUrgent: true };
-    }
-    
-    if (daysLeft <= 7) {
-      return { text: `${daysLeft} días restantes`, isWarning: true };
-    }
-    
-    return { text: `${daysLeft} días restantes`, isNormal: true };
-  };
-  
-  const timeInfo = formatTimeRemaining(campaign.closingDate, campaign.daysLeft);
-
-  const getRiskBadgeVariant = (risk: CampaignResponse['riskLevel']) => {
-    switch (risk) {
-      case 'Bajo': return 'default';
-      case 'Medio': return 'secondary';
-      case 'Alto': return 'destructive';
-    }
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-PY', {
-      style: 'currency',
-      currency: 'PYG',
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
+  const timeInfo = formatTimeRemaining(campaign.daysLeft, { context: 'hero' });
+  const totalPlants = calculateTotalPlantsFromTarget(campaign.targetAmount, campaign.costPerPlant);
 
   return (
     <section className="w-full">
@@ -124,6 +86,9 @@ export function CampaignDetailHero({ campaign }: CampaignDetailHeroProps) {
                 <p className="font-semibold">
                   {formatCurrency(parseFloat(campaign.targetAmount))}
                 </p>
+                <p className="text-xs opacity-75">
+                  ({formatPlantCount(totalPlants)} plantas de {campaign.crop.toLowerCase()})
+                </p>
               </div>
 
               <div className="space-y-1">
@@ -175,6 +140,9 @@ export function CampaignDetailHero({ campaign }: CampaignDetailHeroProps) {
               investorCount={campaign.investorCount}
               title="Progreso de financiamiento"
               showInvestorCount={false}
+              costPerPlant={campaign.costPerPlant}
+              crop={campaign.crop}
+              showPlantInfo={true}
             />
           </div>
         </div>

@@ -2,6 +2,7 @@ import { CampaignResponse } from '@/app/types/campaign';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CampaignProgressCard } from '@/app/ui/shared/components/campaign-progress-card';
+import { formatTimeRemaining, formatCurrency } from '@/lib/utils';
 import { ArrowLeft, MapPin, Users, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -20,36 +21,8 @@ interface MyCampaignTrackingHeroProps {
 
 export function MyCampaignTrackingHero({ campaign, userInvestment }: MyCampaignTrackingHeroProps) {
   
-  // Función para formatear el tiempo restante
-  const formatTimeRemaining = (closingDate: string, daysLeft: number) => {
-    if (daysLeft <= 0) {
-      return { text: 'Campaña cerrada - En producción', isProduction: true };
-    }
-    
-    if (daysLeft === 1) {
-      return { text: 'Último día', isUrgent: true };
-    }
-    
-    if (daysLeft <= 3) {
-      return { text: `${daysLeft} días restantes`, isUrgent: true };
-    }
-    
-    if (daysLeft <= 7) {
-      return { text: `${daysLeft} días restantes`, isWarning: true };
-    }
-    
-    return { text: `${daysLeft} días restantes`, isNormal: true };
-  };
-  
-  const timeInfo = formatTimeRemaining(campaign.closingDate, campaign.daysLeft);
+  const timeInfo = formatTimeRemaining(campaign.daysLeft, { context: 'tracking' });
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-PY', {
-      style: 'currency',
-      currency: 'PYG',
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
 
 
   return (

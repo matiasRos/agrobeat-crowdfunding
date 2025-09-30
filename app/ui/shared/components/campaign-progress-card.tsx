@@ -1,4 +1,5 @@
 import { Progress } from '@/components/ui/progress';
+import { calculateReservedPlants, calculateTotalPlantsFromTarget, formatPlantCount } from '@/lib/utils';
 
 interface CampaignProgressCardProps {
   raisedAmount: string;
@@ -7,6 +8,10 @@ interface CampaignProgressCardProps {
   className?: string;
   title?: string;
   showInvestorCount?: boolean;
+  // Nuevos props para mostrar información de plantas
+  costPerPlant?: string;
+  crop?: string;
+  showPlantInfo?: boolean;
 }
 
 export function CampaignProgressCard({ 
@@ -15,7 +20,10 @@ export function CampaignProgressCard({
   investorCount, 
   className = "",
   title = "Progreso total de la campaña",
-  showInvestorCount = true
+  showInvestorCount = true,
+  costPerPlant,
+  crop,
+  showPlantInfo = false
 }: CampaignProgressCardProps) {
   const progressPercentage = (parseFloat(raisedAmount) / parseFloat(targetAmount)) * 100;
 
@@ -26,6 +34,15 @@ export function CampaignProgressCard({
       minimumFractionDigits: 0,
     }).format(amount);
   };
+
+  // Calcular información de plantas si está disponible
+  const plantInfo = showPlantInfo && costPerPlant ? {
+    totalPlants: calculateTotalPlantsFromTarget(targetAmount, costPerPlant),
+    reservedPlants: calculateReservedPlants(raisedAmount, costPerPlant)
+  } : null;
+  
+  // Calcular plantas restantes
+  const remainingPlants = plantInfo ? Math.max(0, plantInfo.totalPlants - plantInfo.reservedPlants) : 0;
 
   return (
     <div className={`space-y-2 bg-background rounded-lg p-4 ${className}`}>
@@ -54,6 +71,21 @@ export function CampaignProgressCard({
           )}
         </span>
       </div>
+      
+      {/* Información de plantas */}
+      {plantInfo && (
+        <div className="flex justify-between text-xs text-muted-foreground">
+          <span>
+            {formatPlantCount(plantInfo.reservedPlants)} plantas reservadas
+          </span>
+          <span>
+            {remainingPlants > 0 
+              ? `${formatPlantCount(remainingPlants)} plantas restantes`
+              : '¡Meta completada!'
+            }
+          </span>
+        </div>
+      )}
     </div>
   );
 }

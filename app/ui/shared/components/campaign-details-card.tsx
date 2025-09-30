@@ -4,6 +4,7 @@ import { Separator } from '@/components/ui/separator';
 import { CampaignTimeline } from '@/app/ui/campaign-detail/components/campaign-timeline';
 import { RiskInfoDialog } from '@/app/ui/campaign-detail/components/risk-info-dialog';
 import { CampaignResponse } from '@/app/types/campaign';
+import { formatTimeRemaining, formatCurrency, calculateTotalPlantsFromTarget, formatPlantCount } from '@/lib/utils';
 import {
   Calendar,
   TrendingUp,
@@ -22,13 +23,12 @@ export function CampaignDetailsCard({
   showTimeline = true,
   className = "" 
 }: CampaignDetailsCardProps) {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-PY', {
-      style: 'currency',
-      currency: 'PYG',
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
+  const timeInfo = formatTimeRemaining(campaign.daysLeft, { 
+    context: 'details', 
+    includeCssClass: true 
+  });
+  
+  const totalPlants = calculateTotalPlantsFromTarget(campaign.targetAmount, campaign.costPerPlant);
 
   const getRiskBadgeVariant = (risk: CampaignResponse['riskLevel']) => {
     switch (risk) {
@@ -59,6 +59,9 @@ export function CampaignDetailsCard({
             <p className="text-xl font-bold">
               {formatCurrency(parseFloat(campaign.targetAmount))}
             </p>
+            <p className="text-sm text-muted-foreground">
+              ({formatPlantCount(totalPlants)} plantas de {campaign.crop.toLowerCase()})
+            </p>
           </div>
 
           <div className="space-y-2">
@@ -73,15 +76,8 @@ export function CampaignDetailsCard({
                 year: 'numeric'
               })}
             </p>
-            <p className={`text-sm font-medium ${
-              campaign.daysLeft <= 0 ? 'text-red-600' :
-              campaign.daysLeft <= 3 ? 'text-red-600' :
-              campaign.daysLeft <= 7 ? 'text-orange-600' :
-              'text-muted-foreground'
-            }`}>
-              {campaign.daysLeft <= 0 ? 'Campaña cerrada' :
-               campaign.daysLeft === 1 ? 'Último día para reservar' :
-               `${campaign.daysLeft} días restantes`}
+            <p className={`text-sm font-medium ${timeInfo.color}`}>
+              {timeInfo.text}
             </p>
           </div>
 

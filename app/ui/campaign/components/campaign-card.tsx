@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { MapPin, Users, Clock, TrendingUp, CheckCircle } from "lucide-react";
 import { CampaignResponse } from "@/app/types/campaign";
+import { formatTimeRemaining } from "@/lib/utils";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -15,24 +16,10 @@ interface CampaignCardProps {
 export function CampaignCard({ campaign}: CampaignCardProps) {
   const progressPercentage = (parseFloat(campaign.raisedAmount) / parseFloat(campaign.targetAmount)) * 100;
 
-  // Función para formatear el tiempo restante
-  const formatTimeRemaining = (daysLeft: number) => {
-    if (daysLeft <= 0) {
-      return { text: 'Cerrada', color: 'text-red-600' };
-    }
-    if (daysLeft === 1) {
-      return { text: 'Último día', color: 'text-red-600' };
-    }
-    if (daysLeft <= 3) {
-      return { text: `${daysLeft} días`, color: 'text-red-600' };
-    }
-    if (daysLeft <= 7) {
-      return { text: `${daysLeft} días`, color: 'text-orange-600' };
-    }
-    return { text: `${daysLeft} días`, color: 'text-muted-foreground' };
-  };
-
-  const timeInfo = formatTimeRemaining(campaign.daysLeft);
+  const timeInfo = formatTimeRemaining(campaign.daysLeft, { 
+    context: 'card', 
+    includeCssClass: true 
+  });
 
 
   const formatCurrency = (amount: number) => {

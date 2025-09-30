@@ -185,3 +185,195 @@ export function calculateCampaignInvestmentReturn(
     expectedReturnPercentage
   );
 }
+
+/**
+ * Calcula la cantidad total de plantas que corresponde a la meta de financiamiento
+ * @param targetAmount - Meta de financiamiento (como string)
+ * @param costPerPlant - Costo por planta (como string)
+ * @returns Cantidad total de plantas (redondeada hacia abajo)
+ */
+export function calculateTotalPlantsFromTarget(
+  targetAmount: string,
+  costPerPlant: string
+): number {
+  const target = parseFloat(targetAmount);
+  const cost = parseFloat(costPerPlant);
+  
+  if (isNaN(target) || isNaN(cost) || cost === 0) {
+    return 0;
+  }
+  
+  // Redondeamos hacia abajo porque no podemos tener plantas parciales
+  return Math.floor(target / cost);
+}
+
+/**
+ * Formatea un número de plantas para mostrar en la UI
+ * @param plantCount - Cantidad de plantas
+ * @returns String formateado con separadores de miles
+ */
+export function formatPlantCount(plantCount: number): string {
+  return new Intl.NumberFormat('es-PY').format(plantCount);
+}
+
+/**
+ * Calcula cuántas plantas ya han sido reservadas basándose en el monto recaudado
+ * @param raisedAmount - Monto total recaudado (como string)
+ * @param costPerPlant - Costo por planta (como string)
+ * @returns Cantidad de plantas ya reservadas
+ */
+export function calculateReservedPlants(
+  raisedAmount: string,
+  costPerPlant: string
+): number {
+  const raised = parseFloat(raisedAmount);
+  const cost = parseFloat(costPerPlant);
+  
+  if (isNaN(raised) || isNaN(cost) || cost === 0) {
+    return 0;
+  }
+  
+  return Math.floor(raised / cost);
+}
+
+/**
+ * Interfaz para información de disponibilidad de plantas
+ */
+export interface PlantAvailabilityInfo {
+  totalPlants: number;
+  reservedPlants: number;
+  availablePlants: number;
+  isFullyFunded: boolean;
+  availabilityPercentage: number;
+}
+
+/**
+ * Calcula la disponibilidad de plantas para una campaña
+ * @param campaign - Datos de la campaña
+ * @returns Información completa sobre disponibilidad de plantas
+ */
+export function calculatePlantAvailability(
+  campaign: { targetAmount: string; raisedAmount: string; costPerPlant: string }
+): PlantAvailabilityInfo {
+  const totalPlants = calculateTotalPlantsFromTarget(campaign.targetAmount, campaign.costPerPlant);
+  const reservedPlants = calculateReservedPlants(campaign.raisedAmount, campaign.costPerPlant);
+  const availablePlants = Math.max(0, totalPlants - reservedPlants);
+  const isFullyFunded = availablePlants === 0;
+  const availabilityPercentage = totalPlants > 0 ? (availablePlants / totalPlants) * 100 : 0;
+  
+  return {
+    totalPlants,
+    reservedPlants,
+    availablePlants,
+    isFullyFunded,
+    availabilityPercentage
+  };
+}
+
+/**
+ * Interfaz para el resultado del formateo de tiempo restante
+ */
+export interface TimeRemainingInfo {
+  text: string;
+  // Propiedades de estado (booleanas)
+  isExpired?: boolean;
+  isUrgent?: boolean;
+  isWarning?: boolean;
+  isNormal?: boolean;
+  isProduction?: boolean;
+  // Clase CSS para compatibilidad con campaign-card
+  color?: string;
+}
+
+/**
+ * Opciones para personalizar el comportamiento de formatTimeRemaining
+ */
+export interface FormatTimeRemainingOptions {
+  /** Contexto donde se usa la función para personalizar mensajes */
+  context?: 'card' | 'hero' | 'tracking' | 'details';
+  /** Si se debe incluir la clase CSS en lugar de flags booleanos */
+  includeCssClass?: boolean;
+  /** Texto personalizado para cuando la campaña está cerrada */
+  closedText?: string;
+  /** Si se debe usar un formato más descriptivo (ej: "para reservar") */
+  useDescriptiveText?: boolean;
+}
+
+/**
+ * Formatea el tiempo restante de una campaña de manera unificada
+ * @param daysLeft - Días restantes hasta el cierre
+ * @param options - Opciones para personalizar el comportamiento
+ * @returns Información formateada sobre el tiempo restante
+ */
+export function formatTimeRemaining(
+  daysLeft: number,
+  options: FormatTimeRemainingOptions = {}
+): TimeRemainingInfo {
+  const { 
+    context = 'hero', 
+    includeCssClass = false, 
+    closedText,
+    useDescriptiveText = false 
+  } = options;
+  
+  // Determinar el texto para campaña cerrada
+  let expiredText = closedText || 'Campaña cerrada';
+  if (context === 'card' && !closedText) {
+    expiredText = 'Cerrada';
+  } else if (context === 'tracking' && !closedText) {
+    expiredText = 'Campaña cerrada - En producción';
+  }
+  
+  // Determinar el sufijo del texto - ahora más consistente
+  const getSuffix = () => {
+    if (context === 'card') return '';
+    return ' restantes';
+  };
+  
+  // Determinar el texto para "último día"
+  const getLastDayText = () => {
+    if (useDescriptiveText || context === 'details') {
+      return 'Último día para reservar';
+    }
+    return 'Último día';
+  };
+  
+  if (daysLeft <= 0) {
+    return {
+      text: expiredText,
+      isExpired: true,
+      isProduction: context === 'tracking',
+      color: includeCssClass ? 'text-red-600' : undefined
+    };
+  }
+  
+  if (daysLeft === 1) {
+    return {
+      text: getLastDayText(),
+      isUrgent: true,
+      color: includeCssClass ? 'text-red-600' : undefined
+    };
+  }
+  
+  if (daysLeft <= 3) {
+    return {
+      text: `${daysLeft} días${getSuffix()}`,
+      isUrgent: true,
+      color: includeCssClass ? 'text-red-600' : undefined
+    };
+  }
+  
+  if (daysLeft <= 7) {
+    return {
+      text: `${daysLeft} días${getSuffix()}`,
+      isWarning: true,
+      color: includeCssClass ? 'text-orange-600' : undefined
+    };
+  }
+  
+  return {
+    text: `${daysLeft} días${getSuffix()}`,
+    isNormal: true,
+    color: includeCssClass ? 'text-muted-foreground' : undefined
+  };
+}
