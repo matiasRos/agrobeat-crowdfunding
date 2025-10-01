@@ -274,6 +274,7 @@ export class CampaignService {
     id: number;
     amount: string;
     plantCount: number;
+    isPaid: boolean;
     createdAt: Date;
     campaign: CampaignResponse;
   }> | null> {
@@ -338,6 +339,7 @@ export class CampaignService {
             id: row.investment.id,
             amount: row.investment.amount,
             plantCount: row.investment.plantCount,
+            isPaid: row.investment.isPaid || false,
             createdAt: row.investment.investedAt,
             campaign: campaignResponse,
           };
@@ -412,6 +414,129 @@ export class CampaignService {
     } catch (error) {
       console.error(`Error investing in campaign ${campaignId}:`, error);
       throw new Error(`Failed to invest in campaign ${campaignId}`);
+    }
+  }
+
+  /**
+   * Actualiza el estado de pago de una inversión
+   */
+  static async updateInvestmentPaymentStatus(
+    investmentId: number, 
+    isPaid: boolean
+  ): Promise<boolean> {
+    try {
+      const [updatedInvestment] = await db.update(investments)
+        .set({ isPaid })
+        .where(eq(investments.id, investmentId))
+        .returning({ id: investments.id });
+
+      return !!updatedInvestment;
+    } catch (error) {
+      console.error(`Error updating payment status for investment ${investmentId}:`, error);
+      throw new Error(`Failed to update payment status for investment ${investmentId}`);
+    }
+  }
+
+  /**
+   * Obtiene todos los inversores con sus datos relevantes
+   */
+  static async getAllInvestors(): Promise<Array<{
+    id: number;
+    email: string;
+    name: string | null;
+    amount: string;
+    plantCount: number;
+    isPaid: boolean;
+    campaignTitle: string;
+    investedAt: Date;
+  }>> {
+    try {
+      const investorsList = await db
+        .select({
+          investment: investments,
+          user: users,
+          campaign: campaigns,
+        })
+        .from(investments)
+        .leftJoin(users, eq(investments.userId, users.id))
+        .leftJoin(campaigns, eq(investments.campaignId, campaigns.id))
+        .where(eq(campaigns.isActive, true))
+        .orderBy(sql`${investments.investedAt} DESC`);
+
+      return investorsList
+        .map(row => {
+          if (!row.user || !row.campaign) {
+            return null;
+          }
+
+          return {
+            id: row.investment.id,
+            email: row.user.email,
+            name: row.user.name,
+            amount: row.investment.amount,
+            plantCount: row.investment.plantCount,
+            isPaid: row.investment.isPaid || false,
+            campaignTitle: row.campaign.title,
+            investedAt: row.investment.investedAt,
+          };
+        })
+        .filter((item): item is NonNullable<typeof item> => item !== null);
+    } catch (error) {
+      console.error(`Error fetching all investors:`, error);
+      throw new Error(`Failed to fetch all investors`);
+    }
+  }
+
+  /**
+   * Obtiene inversiones por estado de pago
+   */
+  static async getInvestmentsByPaymentStatus(isPaid: boolean): Promise<Array<{
+    id: number;
+    amount: string;
+    plantCount: number;
+    isPaid: boolean;
+    createdAt: Date;
+    user: { name: string | null; email: string };
+    campaign: { title: string; id: number };
+  }>> {
+    try {
+      const investmentsList = await db
+        .select({
+          investment: investments,
+          user: users,
+          campaign: campaigns,
+        })
+        .from(investments)
+        .leftJoin(users, eq(investments.userId, users.id))
+        .leftJoin(campaigns, eq(investments.campaignId, campaigns.id))
+        .where(eq(investments.isPaid, isPaid));
+
+      return investmentsList
+        .map(row => {
+          if (!row.user || !row.campaign) {
+            return null;
+          }
+
+          return {
+            id: row.investment.id,
+            amount: row.investment.amount,
+            plantCount: row.investment.plantCount,
+            isPaid: row.investment.isPaid || false,
+            createdAt: row.investment.investedAt,
+            user: {
+              name: row.user.name,
+              email: row.user.email,
+            },
+            campaign: {
+              title: row.campaign.title,
+              id: row.campaign.id,
+            },
+          };
+        })
+        .filter((item): item is NonNullable<typeof item> => item !== null);
+    } catch (error) {
+      console.error(`Error fetching investments by payment status:`, error);
+      throw new Error(`Failed to fetch investments by payment status`);
     }
   }
 }

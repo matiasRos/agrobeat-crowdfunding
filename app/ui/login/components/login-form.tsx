@@ -73,9 +73,17 @@ export function LoginForm({
 
   const handleSubmit = async (formData: FormData) => {
     startTransition(async () => {
-      const result = await action(formData);
-      if (result?.error) {
-        toast.error(result.error);
+      try {
+        const result = await action(formData);
+        console.log('Login result:', result);
+        
+        // Si hay un error, lo mostramos
+        if (result?.error) {
+          toast.error(result.error);
+        }
+      } catch (error) {
+        console.error('Error durante el login:', error);
+        toast.error('Error inesperado. Inténtalo de nuevo.');
       }
     });
   };

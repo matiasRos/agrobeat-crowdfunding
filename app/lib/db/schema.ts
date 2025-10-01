@@ -67,6 +67,7 @@ export const investments = pgTable('investments', {
   id: serial('id').primaryKey(),
   amount: decimal('amount', { precision: 12, scale: 2 }).notNull(),
   plantCount: integer('plant_count').notNull(), // Cantidad de plantas reservadas
+  isPaid: boolean('is_paid').default(false), // Indica si la inversión está pagada
   investedAt: timestamp('invested_at').defaultNow().notNull(),
   
   // Foreign keys

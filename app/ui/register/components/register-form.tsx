@@ -66,21 +66,35 @@ function SubmitButton({
 export function RegisterForm({
   className,
   action,
+  isSubmitting,
+  showLoginLink = true,
   ...props
 }: React.ComponentProps<"div"> & {
-  action: (formData: FormData) => Promise<{ error?: string } | void>;
+  action: (formData: FormData) => Promise<{ error?: string; success?: string } | void>;
+  isSubmitting?: boolean;
+  showLoginLink?: boolean;
 }) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isPending, startTransition] = useTransition();
   const passwordsMatch = password === confirmPassword;
   const showPasswordError = confirmPassword.length > 0 && !passwordsMatch;
+  const isLoading = isPending || isSubmitting;
 
   const handleSubmit = async (formData: FormData) => {
     startTransition(async () => {
       const result = await action(formData);
       if (result?.error) {
         toast.error(result.error);
+      } else if (result?.success) {
+        toast.success(result.success);
+        // Resetear el formulario
+        setPassword('');
+        setConfirmPassword('');
+        const form = document.querySelector('form') as HTMLFormElement;
+        if (form) {
+          form.reset();
+        }
       }
     });
   };
@@ -139,17 +153,19 @@ export function RegisterForm({
                 )}
               </div>
               <div className="flex flex-col gap-3">
-                <SubmitButton isPending={isPending}>
+                <SubmitButton isPending={isLoading}>
                   Crear cuenta
                 </SubmitButton>
               </div>
             </div>
-            <div className="mt-4 text-center text-sm">
-              ¿Ya tienes una cuenta?{" "}
-              <Link href="/login" className="underline underline-offset-4">
-                Inicia sesión
-              </Link>
-            </div>
+            {showLoginLink && (
+              <div className="mt-4 text-center text-sm">
+                ¿Ya tienes una cuenta?{" "}
+                <Link href="/login" className="underline underline-offset-4">
+                  Inicia sesión
+                </Link>
+              </div>
+            )}
           </form>
         </CardContent>
       </Card>
