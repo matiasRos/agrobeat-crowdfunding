@@ -27,6 +27,8 @@ export interface ReservationConfirmationData {
 
 export interface WelcomeEmailData {
   userName: string;
+  userEmail: string;
+  userPassword: string;
   dashboardUrl: string;
 }
 
@@ -36,6 +38,23 @@ export interface PaymentConfirmationData {
   plantCount: number;
   formattedAmount: string;
   dashboardUrl: string;
+}
+
+export interface NewCampaignNotificationData {
+  userName: string;
+  campaignTitle: string;
+  campaignDescription: string;
+  crop: string;
+  location: string;
+  expectedReturn: string;
+  closingDate: string;
+  campaignUrl: string;
+}
+
+export interface PasswordResetEmailData {
+  userName: string;
+  resetLink: string;
+  expirationTime: string;
 }
 
 // Tipo base para todos los templates

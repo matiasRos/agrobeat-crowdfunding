@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { RegisterForm } from '@/app/ui/register/components/register-form';
 import { createUser, getUser } from '@/app/db';
+import { sendWelcomeEmail } from '@/app/lib/services/email';
 import { UserPlus, Users } from 'lucide-react';
 
 export function UserRegisterSection() {
@@ -25,7 +26,20 @@ export function UserRegisterSection() {
     
     try {
       await createUser(email, password);
-      return { success: 'Usuario creado exitosamente' };
+      
+      // Extraer el nombre del email (parte antes del @)
+      const userName = email.split('@')[0];
+      
+      // Enviar correo de bienvenida con las credenciales (no bloqueamos el registro si falla)
+      try {
+        await sendWelcomeEmail(email, userName, password);
+        console.log('Correo de bienvenida enviado a:', email);
+      } catch (emailError) {
+        console.error('Error enviando correo de bienvenida:', emailError);
+        // No retornamos error, el usuario ya fue creado exitosamente
+      }
+      
+      return { success: 'Usuario creado exitosamente. Se ha enviado un correo con las credenciales de acceso.' };
     } catch (error) {
       console.error('Error creating user:', error);
       return { error: 'Error al crear la cuenta. Inténtalo de nuevo.' };
@@ -54,42 +68,6 @@ export function UserRegisterSection() {
           </CardContent>
         </Card>
 
-        {/* Información y Estadísticas */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Información del Sistema</CardTitle>
-            <CardDescription>
-              Estadísticas y configuración de usuarios.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <h4 className="font-medium">Roles Disponibles</h4>
-              <div className="space-y-1 text-sm text-muted-foreground">
-                <div>• <span className="font-medium">Admin:</span> Acceso completo al sistema</div>
-                <div>• <span className="font-medium">Investor:</span> Puede invertir en campañas</div>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <h4 className="font-medium">Configuración por Defecto</h4>
-              <div className="space-y-1 text-sm text-muted-foreground">
-                <div>• Rol por defecto: <span className="font-medium">Investor</span></div>
-                <div>• Estado inicial: <span className="font-medium">Activo</span></div>
-              </div>
-            </div>
-
-            <div className="pt-4 border-t">
-              <h4 className="font-medium mb-2">Próximas Funcionalidades</h4>
-              <div className="space-y-1 text-sm text-muted-foreground">
-                <div>• Lista de usuarios existentes</div>
-                <div>• Edición de roles y permisos</div>
-                <div>• Activar/desactivar usuarios</div>
-                <div>• Historial de actividad</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );

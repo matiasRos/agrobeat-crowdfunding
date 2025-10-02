@@ -85,6 +85,15 @@ export const campaignTimeline = pgTable('campaign_timeline', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
+// Tabla de tokens para reseteo de contraseña
+export const passwordResetTokens = pgTable('password_reset_tokens', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').references(() => users.id).notNull(),
+  token: varchar('token', { length: 255 }).unique().notNull(),
+  expiresAt: timestamp('expires_at').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
 // Definir relaciones para Drizzle ORM
 export const usersRelations = relations(users, ({ many }) => ({
   investments: many(investments),
@@ -124,6 +133,13 @@ export const campaignTimelineRelations = relations(campaignTimeline, ({ one }) =
   }),
 }));
 
+export const passwordResetTokensRelations = relations(passwordResetTokens, ({ one }) => ({
+  user: one(users, {
+    fields: [passwordResetTokens.userId],
+    references: [users.id],
+  }),
+}));
+
 // Tipos TypeScript inferidos del esquema
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
@@ -139,3 +155,6 @@ export type NewInvestment = typeof investments.$inferInsert;
 
 export type CampaignTimeline = typeof campaignTimeline.$inferSelect;
 export type NewCampaignTimeline = typeof campaignTimeline.$inferInsert;
+
+export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
+export type NewPasswordResetToken = typeof passwordResetTokens.$inferInsert;

@@ -1,46 +1,47 @@
 import { Suspense } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, TrendingUp } from 'lucide-react';
-import { InvestorsData } from './investors-data';
+import { TrendingUp, Sprout } from 'lucide-react';
+import { CampaignsAdminData } from './campaigns-admin-data';
 import { InvestorsTableSkeleton } from './investors-table-skeleton';
 
-interface InvestorsListSectionProps {
+interface CampaignsAdminListSectionProps {
   searchParams?: {
     page?: string;
   };
 }
 
-export function InvestorsListSection({ searchParams }: InvestorsListSectionProps) {
+export function CampaignsAdminListSection({ searchParams }: CampaignsAdminListSectionProps) {
   const currentPage = Number(searchParams?.page) || 1;
   
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-          <TrendingUp className="h-6 w-6" />
-          Lista de Inversores
+          <Sprout className="h-6 w-6" />
+          Gestión de Campañas
         </h2>
         <p className="text-muted-foreground">
-          Visualiza todos los inversores registrados con sus datos relevantes.
+          Administra todas las campañas de crowdfunding y controla su estado de activación.
         </p>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Inversores Registrados
+            <TrendingUp className="h-5 w-5" />
+            Todas las Campañas
           </CardTitle>
           <CardDescription>
-            Lista completa de inversores con montos, plantas reservadas y estado de pago.
+            Lista completa de campañas con progreso, inversores y estado de activación.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Suspense key={currentPage} fallback={<InvestorsTableSkeleton />}>
-            <InvestorsData page={currentPage} pageSize={10} />
+            <CampaignsAdminData page={currentPage} pageSize={10} />
           </Suspense>
         </CardContent>
       </Card>
     </div>
   );
 }
+

@@ -438,19 +438,45 @@ export class CampaignService {
   }
 
   /**
-   * Obtiene todos los inversores con sus datos relevantes
+   * Obtiene todos los inversores con sus datos relevantes (con paginación)
    */
-  static async getAllInvestors(): Promise<Array<{
-    id: number;
-    email: string;
-    name: string | null;
-    amount: string;
-    plantCount: number;
-    isPaid: boolean;
-    campaignTitle: string;
-    investedAt: Date;
-  }>> {
+  static async getAllInvestors(options?: {
+    page?: number;
+    pageSize?: number;
+  }): Promise<{
+    investors: Array<{
+      id: number;
+      email: string;
+      name: string | null;
+      amount: string;
+      plantCount: number;
+      isPaid: boolean;
+      campaignTitle: string;
+      investedAt: Date;
+    }>;
+    totalCount: number;
+    totalPages: number;
+    currentPage: number;
+  }> {
     try {
+      const page = options?.page || 1;
+      const pageSize = options?.pageSize || 10;
+      const offset = (page - 1) * pageSize;
+
+      // Obtener el conteo total de inversores
+      const [countResult] = await db
+        .select({
+          count: count(),
+        })
+        .from(investments)
+        .leftJoin(users, eq(investments.userId, users.id))
+        .leftJoin(campaigns, eq(investments.campaignId, campaigns.id))
+        .where(eq(campaigns.isActive, true));
+
+      const totalCount = countResult?.count || 0;
+      const totalPages = Math.ceil(totalCount / pageSize);
+
+      // Obtener inversores paginados
       const investorsList = await db
         .select({
           investment: investments,
@@ -461,9 +487,11 @@ export class CampaignService {
         .leftJoin(users, eq(investments.userId, users.id))
         .leftJoin(campaigns, eq(investments.campaignId, campaigns.id))
         .where(eq(campaigns.isActive, true))
-        .orderBy(sql`${investments.investedAt} DESC`);
+        .orderBy(sql`${investments.investedAt} DESC`)
+        .limit(pageSize)
+        .offset(offset);
 
-      return investorsList
+      const investors = investorsList
         .map(row => {
           if (!row.user || !row.campaign) {
             return null;
@@ -481,6 +509,13 @@ export class CampaignService {
           };
         })
         .filter((item): item is NonNullable<typeof item> => item !== null);
+
+      return {
+        investors,
+        totalCount,
+        totalPages,
+        currentPage: page,
+      };
     } catch (error) {
       console.error(`Error fetching all investors:`, error);
       throw new Error(`Failed to fetch all investors`);
@@ -537,6 +572,148 @@ export class CampaignService {
     } catch (error) {
       console.error(`Error fetching investments by payment status:`, error);
       throw new Error(`Failed to fetch investments by payment status`);
+    }
+  }
+
+  /**
+   * Obtiene todas las campañas para administración (activas e inactivas) con paginación
+   */
+  static async getAllCampaignsAdmin(options?: {
+    page?: number;
+    pageSize?: number;
+  }): Promise<{
+    campaigns: Array<{
+      id: number;
+      title: string;
+      crop: string;
+      location: string;
+      targetAmount: string;
+      raisedAmount: string;
+      investorCount: number;
+      closingDate: Date;
+      isActive: boolean;
+      producerName: string;
+      createdAt: Date;
+    }>;
+    totalCount: number;
+    totalPages: number;
+    currentPage: number;
+  }> {
+    try {
+      const page = options?.page || 1;
+      const pageSize = options?.pageSize || 10;
+      const offset = (page - 1) * pageSize;
+
+      // Obtener el conteo total de campañas
+      const [countResult] = await db
+        .select({
+          count: count(),
+        })
+        .from(campaigns);
+
+      const totalCount = countResult?.count || 0;
+      const totalPages = Math.ceil(totalCount / pageSize);
+
+      // Obtener campañas paginadas con sus productores
+      const campaignsList = await db
+        .select({
+          campaign: campaigns,
+          producer: producers,
+        })
+        .from(campaigns)
+        .leftJoin(producers, eq(campaigns.producerId, producers.id))
+        .orderBy(sql`${campaigns.createdAt} DESC`)
+        .limit(pageSize)
+        .offset(offset);
+
+      // Obtener estadísticas de inversión para cada campaña
+      const campaignIds = campaignsList.map(row => row.campaign.id);
+      
+      const investmentStats = campaignIds.length > 0 ? await db
+        .select({
+          campaignId: investments.campaignId,
+          raisedAmount: sql<string>`COALESCE(SUM(${investments.amount}), 0)::text`,
+          investorCount: count(sql`DISTINCT ${investments.userId}`),
+        })
+        .from(investments)
+        .where(sql`${investments.campaignId} IN (${sql.join(campaignIds, sql`, `)})`)
+        .groupBy(investments.campaignId) : [];
+
+      // Crear un mapa de estadísticas por campaignId
+      const statsMap = new Map<number, { raisedAmount: string; investorCount: number }>();
+      investmentStats.forEach(stat => {
+        statsMap.set(stat.campaignId, {
+          raisedAmount: stat.raisedAmount,
+          investorCount: stat.investorCount,
+        });
+      });
+
+      const campaignsData = campaignsList
+        .map(row => {
+          if (!row.producer) {
+            return null;
+          }
+
+          const stats = statsMap.get(row.campaign.id) || { raisedAmount: '0', investorCount: 0 };
+
+          return {
+            id: row.campaign.id,
+            title: row.campaign.title,
+            crop: row.campaign.crop,
+            location: row.campaign.location,
+            targetAmount: row.campaign.targetAmount,
+            raisedAmount: stats.raisedAmount,
+            investorCount: stats.investorCount,
+            closingDate: row.campaign.closingDate,
+            isActive: row.campaign.isActive,
+            producerName: row.producer.name,
+            createdAt: row.campaign.createdAt,
+          };
+        })
+        .filter((item): item is NonNullable<typeof item> => item !== null);
+
+      return {
+        campaigns: campaignsData,
+        totalCount,
+        totalPages,
+        currentPage: page,
+      };
+    } catch (error) {
+      console.error(`Error fetching all campaigns for admin:`, error);
+      throw new Error(`Failed to fetch all campaigns for admin`);
+    }
+  }
+
+  /**
+   * Alterna el estado activo/inactivo de una campaña
+   */
+  static async toggleCampaignStatus(campaignId: number): Promise<boolean> {
+    try {
+      // Obtener el estado actual
+      const [campaign] = await db
+        .select({ isActive: campaigns.isActive })
+        .from(campaigns)
+        .where(eq(campaigns.id, campaignId))
+        .limit(1);
+
+      if (!campaign) {
+        throw new Error('Campaign not found');
+      }
+
+      // Alternar el estado
+      const [updatedCampaign] = await db
+        .update(campaigns)
+        .set({ 
+          isActive: !campaign.isActive,
+          updatedAt: new Date() 
+        })
+        .where(eq(campaigns.id, campaignId))
+        .returning({ isActive: campaigns.isActive });
+
+      return updatedCampaign?.isActive || false;
+    } catch (error) {
+      console.error(`Error toggling campaign status:`, error);
+      throw new Error(`Failed to toggle campaign status`);
     }
   }
 }

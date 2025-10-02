@@ -1,3 +1,6 @@
+'use client';
+
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Table,
   TableBody,
@@ -11,6 +14,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { SendEmailButton } from "./send-email-button";
 import { PaymentStatusCheckbox } from "./payment-status-checkbox";
+import { TablePagination } from "@/app/ui/shared/components";
 
 interface Investor {
   id: number;
@@ -25,9 +29,25 @@ interface Investor {
 
 interface InvestorsTableProps {
   investors: Investor[];
+  currentPage: number;
+  totalPages: number;
+  totalCount: number;
 }
 
-export function InvestorsTable({ investors }: InvestorsTableProps) {
+export function InvestorsTable({ 
+  investors, 
+  currentPage, 
+  totalPages,
+  totalCount 
+}: InvestorsTableProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const handlePageChange = (page: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('page', page.toString());
+    router.push(`?${params.toString()}`);
+  };
 
   // Función para formatear fecha de forma consistente (sin conversión de zona horaria)
   const formatDate = (date: Date) => {
@@ -59,10 +79,11 @@ export function InvestorsTable({ investors }: InvestorsTableProps) {
   const paidInvestments = investors.filter(investor => investor.isPaid).length;
 
   return (
-    <Table>
-      <TableCaption>
-        Lista de todos los inversores registrados en el sistema.
-      </TableCaption>
+    <div className="space-y-4">
+      <Table>
+        <TableCaption>
+          Mostrando {investors.length} de {totalCount} inversores registrados.
+        </TableCaption>
       <TableHeader>
         <TableRow>
           <TableHead>Email</TableHead>
@@ -145,6 +166,14 @@ export function InvestorsTable({ investors }: InvestorsTableProps) {
           </TableRow>
         </TableFooter>
       )}
-    </Table>
+      </Table>
+      
+      {/* Componente de paginación */}
+      <TablePagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={handlePageChange}
+      />
+    </div>
   );
 }

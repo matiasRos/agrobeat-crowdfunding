@@ -161,12 +161,9 @@ export function CampaignCard({ campaign }: CampaignCardProps) {
       <CardFooter>
         <Button
           className="w-full"
-          asChild
           variant="default"
         >
-          <Link href={`/dashboard/campaigns/${campaign.id}`}>
-            {'Ver detalles'}
-          </Link>
+          Ver detalles
         </Button>
       </CardFooter>
     </Card>
