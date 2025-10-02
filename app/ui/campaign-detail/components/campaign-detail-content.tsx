@@ -1,13 +1,15 @@
 import { CampaignResponse } from '@/app/types/campaign';
+import { ExistingInvestmentResult } from '@/app/actions/check-investment';
 import { CampaignDetailHero } from './campaign-detail-hero';
 import { CampaignDetailInfo } from './campaign-detail-info';
 import { InvestmentSimulator } from './investment-simulator';
 
 interface CampaignDetailContentProps {
   campaign: CampaignResponse;
+  existingInvestment: ExistingInvestmentResult;
 }
 
-export function CampaignDetailContent({ campaign }: CampaignDetailContentProps) {
+export function CampaignDetailContent({ campaign, existingInvestment }: CampaignDetailContentProps) {
   return (
     <>
       {/* Hero section con imagen y título */}
@@ -17,7 +19,7 @@ export function CampaignDetailContent({ campaign }: CampaignDetailContentProps) 
           <div className="grid gap-3 lg:grid-cols-3">
             {/* Información detallada de la campaña */}
             <div className="lg:col-span-2">
-              <InvestmentSimulator campaign={campaign} />
+              <InvestmentSimulator campaign={campaign} existingInvestment={existingInvestment} />
             </div>
             <div className="lg:col-span-1">
               <CampaignDetailInfo campaign={campaign} />

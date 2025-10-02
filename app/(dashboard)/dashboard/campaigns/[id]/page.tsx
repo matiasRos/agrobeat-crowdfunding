@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { CampaignService } from '@/app/lib/services/campaigns';
+import { checkExistingInvestment } from '@/app/actions/check-investment';
 import { CampaignDetailContent } from '@/app/ui/campaign-detail/components/campaign-detail-content';
 
 interface CampaignDetailPageProps {
@@ -15,12 +16,16 @@ export default async function CampaignDetailPage({ params }: CampaignDetailPageP
     notFound();
   }
 
-  const campaign = await CampaignService.getCampaignById(campaignId);
+  // Obtener campaña e inversión existente en paralelo
+  const [campaign, existingInvestment] = await Promise.all([
+    CampaignService.getCampaignById(campaignId),
+    checkExistingInvestment(campaignId)
+  ]);
 
   if (!campaign) {
     notFound();
   }
 
-  return <CampaignDetailContent campaign={campaign} />;
+  return <CampaignDetailContent campaign={campaign} existingInvestment={existingInvestment} />;
 
 }

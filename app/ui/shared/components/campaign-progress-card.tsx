@@ -14,10 +14,10 @@ interface CampaignProgressCardProps {
   showPlantInfo?: boolean;
 }
 
-export function CampaignProgressCard({ 
-  raisedAmount, 
-  targetAmount, 
-  investorCount, 
+export function CampaignProgressCard({
+  raisedAmount,
+  targetAmount,
+  investorCount,
   className = "",
   title = "Progreso total de la campaña",
   showInvestorCount = true,
@@ -40,7 +40,7 @@ export function CampaignProgressCard({
     totalPlants: calculateTotalPlantsFromTarget(targetAmount, costPerPlant),
     reservedPlants: calculateReservedPlants(raisedAmount, costPerPlant)
   } : null;
-  
+
   // Calcular plantas restantes
   const remainingPlants = plantInfo ? Math.max(0, plantInfo.totalPlants - plantInfo.reservedPlants) : 0;
 
@@ -71,21 +71,26 @@ export function CampaignProgressCard({
           )}
         </span>
       </div>
-      
+
       {/* Información de plantas */}
       {plantInfo && (
         <div className="flex justify-between text-xs text-muted-foreground">
           <span>
             {formatPlantCount(plantInfo.reservedPlants)} plantas reservadas
           </span>
-          <span>
-            {remainingPlants > 0 
-              ? `${formatPlantCount(remainingPlants)} plantas restantes`
-              : '¡Meta completada!'
-            }
-          </span>
-        </div>
-      )}
-    </div>
+          {remainingPlants > 0 && (
+            < span >
+              {formatPlantCount(remainingPlants)} plantas restantes
+            </span>
+          )}
+          {remainingPlants <= 0 && (
+            < span className="text-green-600 font-semibold">
+              ¡Meta completada!
+            </span>
+          )}
+        </div >
+      )
+      }
+    </div >
   );
 }

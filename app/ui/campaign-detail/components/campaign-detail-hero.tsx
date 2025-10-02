@@ -2,7 +2,7 @@ import { CampaignResponse } from '@/app/types/campaign';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CampaignProgressCard } from '@/app/ui/shared/components/campaign-progress-card';
-import { formatTimeRemaining, formatCurrency, calculateTotalPlantsFromTarget, formatPlantCount } from '@/lib/utils';
+import { formatTimeRemaining, formatCurrency, calculateTotalPlantsFromTarget, formatPlantCount, calculatePlantAvailability } from '@/lib/utils';
 import { ArrowLeft, MapPin, Clock, Users, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -15,6 +15,8 @@ export function CampaignDetailHero({ campaign }: CampaignDetailHeroProps) {
   
   const timeInfo = formatTimeRemaining(campaign.daysLeft, { context: 'hero' });
   const totalPlants = calculateTotalPlantsFromTarget(campaign.targetAmount, campaign.costPerPlant);
+  const availability = calculatePlantAvailability(campaign);
+  const isCampaignClosed = campaign.daysLeft <= 0 || availability.isFullyFunded;
 
   return (
     <section className="w-full">
@@ -105,19 +107,23 @@ export function CampaignDetailHero({ campaign }: CampaignDetailHeroProps) {
                   <span className="text-sm opacity-75">Tiempo restante</span>
                 </div>
                 <p className={`font-semibold ${
+                  availability.isFullyFunded && campaign.daysLeft > 0 ? 'text-green-300' :
                   timeInfo.isExpired ? 'text-red-300' :
                   timeInfo.isUrgent ? 'text-red-300' :
                   timeInfo.isWarning ? 'text-yellow-300' :
                   'text-white'
                 }`}>
-                  {timeInfo.text}
+                  {availability.isFullyFunded && campaign.daysLeft > 0 ? 'Cerrada' : timeInfo.text}
                 </p>
                 <p className="text-xs opacity-75">
-                  Cierra: {new Date(campaign.closingDate).toLocaleDateString('es-PY', {
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric'
-                  })}
+                  {availability.isFullyFunded && campaign.daysLeft > 0 
+                    ? '100% financiada - Sin plantas disponibles' 
+                    : `Cierra: ${new Date(campaign.closingDate).toLocaleDateString('es-PY', {
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric'
+                    })}`
+                  }
                 </p>
               </div>
 

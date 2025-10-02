@@ -5,14 +5,16 @@ import { db } from '@/app/lib/db';
 import { users, investments } from '@/app/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 
-export async function checkExistingInvestment(campaignId: number): Promise<{
+export interface ExistingInvestmentResult {
   hasInvestment: boolean;
   investment?: {
     amount: string;
     plantCount: number;
     investedAt: Date;
   };
-}> {
+}
+
+export async function checkExistingInvestment(campaignId: number): Promise<ExistingInvestmentResult> {
   try {
     // Verificar autenticación
     const session = await auth();

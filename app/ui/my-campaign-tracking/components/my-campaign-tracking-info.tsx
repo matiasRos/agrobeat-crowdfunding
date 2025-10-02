@@ -149,7 +149,7 @@ export function MyCampaignTrackingInfo({ campaign, userInvestment }: MyCampaignT
                 <Clock className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm text-muted-foreground">Estado de la campaña</span>
               </div>
-              <p className={`text-xl font-bold ${
+              <p className={`text-lg font-bold ${
                 campaign.daysLeft <= 0 ? 'text-green-600' :
                 campaign.daysLeft <= 3 ? 'text-red-600' :
                 campaign.daysLeft <= 7 ? 'text-orange-600' :

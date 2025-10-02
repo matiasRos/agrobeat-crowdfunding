@@ -1,45 +1,44 @@
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { MapPin, Users, Clock, TrendingUp, CheckCircle } from "lucide-react";
+import { MapPin, Users, Clock, TrendingUp, CheckCircle, XCircle } from "lucide-react";
 import { CampaignResponse } from "@/app/types/campaign";
-import { formatTimeRemaining } from "@/lib/utils";
+import { formatTimeRemaining, formatCurrency, calculatePlantAvailability } from "@/lib/utils";
 import Link from "next/link";
 import Image from "next/image";
+import { Button } from "@/components/ui/button";
 
 interface CampaignCardProps {
   campaign: CampaignResponse;
- 
+
 }
 
-export function CampaignCard({ campaign}: CampaignCardProps) {
+export function CampaignCard({ campaign }: CampaignCardProps) {
   const progressPercentage = (parseFloat(campaign.raisedAmount) / parseFloat(campaign.targetAmount)) * 100;
 
-  const timeInfo = formatTimeRemaining(campaign.daysLeft, { 
-    context: 'card', 
-    includeCssClass: true 
+  const timeInfo = formatTimeRemaining(campaign.daysLeft, {
+    context: 'card',
+    includeCssClass: true
   });
 
+  // Verificar disponibilidad de plantas
+  const availability = calculatePlantAvailability(campaign);
+  const isCampaignClosed = campaign.daysLeft <= 0 || availability.isFullyFunded;
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-PY', {
-      style: 'currency',
-      currency: 'PYG',
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
+  // Prioridad: si está 100% financiada, mostrar eso sin importar el tiempo
+  const isFullyFunded = availability.isFullyFunded;
+  const isClosedByTime = campaign.daysLeft <= 0 && !isFullyFunded;
 
   return (
-    <Card className="overflow-hidden transition-all hover:shadow-lg">
-      {/* Imagen */}
-      <div className="relative h-48 overflow-hidden">
+    <Link href={`/dashboard/campaigns/${campaign.id}`} className="block">
+      <Card className="overflow-hidden transition-all hover:shadow-lg cursor-pointer">
+        {/* Imagen */}
+        <div className="relative h-48 overflow-hidden">
         <Image
           src={campaign.imageUrl}
           alt={campaign.title}
-          className={`h-full w-full object-cover transition-all duration-300 ${
-            campaign.isInvestedByUser ? 'blur-sm scale-105' : ''
-          }`}
+          className={`h-full w-full object-cover transition-all duration-300 ${campaign.isInvestedByUser ? 'blur-sm scale-105' : ''
+            }`}
           width={500}
           height={500}
         />
@@ -50,6 +49,16 @@ export function CampaignCard({ campaign}: CampaignCardProps) {
             <Badge variant="secondary" className="bg-green-500 text-white border-green-600 px-4 py-2 text-sm font-semibold shadow-lg hover:bg-green-600">
               <CheckCircle className="h-4 w-4 mr-2" />
               Reservado
+            </Badge>
+          </div>
+        )}
+
+        {/* Indicador de campaña cerrada por tiempo (solo si NO está 100% financiada) */}
+        {!campaign.isInvestedByUser && isClosedByTime && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+            <Badge variant="secondary" className="bg-gray-600 text-white border-gray-700 px-4 py-2 text-sm font-semibold shadow-lg">
+              <XCircle className="h-4 w-4 mr-2" />
+              Cerrada
             </Badge>
           </div>
         )}
@@ -100,20 +109,34 @@ export function CampaignCard({ campaign}: CampaignCardProps) {
 
           <div className="space-y-1">
             <div className="flex items-center justify-center gap-1">
-              <Clock className={`h-3 w-3 ${timeInfo.color}`} />
-              <span className={`text-sm font-medium ${timeInfo.color}`}>
-                {timeInfo.text}
+              <Clock className={`h-3 w-3 ${isFullyFunded ? 'text-green-600' :
+                  isClosedByTime ? 'text-gray-600' :
+                    timeInfo.color
+                }`} />
+              <span className={`text-sm font-medium ${isFullyFunded ? 'text-green-600' :
+                  isClosedByTime ? 'text-gray-600' :
+                    timeInfo.color
+                }`}>
+                {isCampaignClosed ? 'Cerrada' : timeInfo.text}
               </span>
             </div>
             <p className="text-xs text-muted-foreground">
-              {campaign.daysLeft > 0 ? 'Restante' : 'Estado'}
+              {isFullyFunded
+                ? '100% financiada'
+                : isClosedByTime
+                  ? 'Fecha límite alcanzada'
+                  : 'Restante'
+              }
             </p>
-            <p className="text-xs text-muted-foreground">
-              {new Date(campaign.closingDate).toLocaleDateString('es-PY', {
-                day: 'numeric',
-                month: 'short'
-              })}
-            </p>
+            {/* Mostrar fecha solo si NO está 100% financiada */}
+            {!isFullyFunded && (
+              <p className="text-xs text-muted-foreground">
+                {new Date(campaign.closingDate).toLocaleDateString('es-PY', {
+                  day: 'numeric',
+                  month: 'short'
+                })}
+              </p>
+            )}
           </div>
 
           <div className="space-y-1">
@@ -136,14 +159,17 @@ export function CampaignCard({ campaign}: CampaignCardProps) {
       </CardContent>
 
       <CardFooter>
-        {!campaign.isInvestedByUser && (
-          <Button className="w-full" asChild>
-            <Link href={`/dashboard/campaigns/${campaign.id}`}>
-              Ver Detalles
-            </Link>
-          </Button>
-        )}
+        <Button
+          className="w-full"
+          asChild
+          variant="default"
+        >
+          <Link href={`/dashboard/campaigns/${campaign.id}`}>
+            {'Ver detalles'}
+          </Link>
+        </Button>
       </CardFooter>
     </Card>
+    </Link>
   );
 }

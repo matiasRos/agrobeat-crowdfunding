@@ -4,7 +4,7 @@ import { Separator } from '@/components/ui/separator';
 import { CampaignTimeline } from '@/app/ui/campaign-detail/components/campaign-timeline';
 import { RiskInfoDialog } from '@/app/ui/campaign-detail/components/risk-info-dialog';
 import { CampaignResponse } from '@/app/types/campaign';
-import { formatTimeRemaining, formatCurrency, calculateTotalPlantsFromTarget, formatPlantCount } from '@/lib/utils';
+import { formatTimeRemaining, formatCurrency, calculateTotalPlantsFromTarget, formatPlantCount, calculatePlantAvailability } from '@/lib/utils';
 import {
   Calendar,
   TrendingUp,
@@ -18,17 +18,19 @@ interface CampaignDetailsCardProps {
   className?: string;
 }
 
-export function CampaignDetailsCard({ 
-  campaign, 
+export function CampaignDetailsCard({
+  campaign,
   showTimeline = true,
-  className = "" 
+  className = ""
 }: CampaignDetailsCardProps) {
-  const timeInfo = formatTimeRemaining(campaign.daysLeft, { 
-    context: 'details', 
-    includeCssClass: true 
+  const timeInfo = formatTimeRemaining(campaign.daysLeft, {
+    context: 'details',
+    includeCssClass: true
   });
-  
+
   const totalPlants = calculateTotalPlantsFromTarget(campaign.targetAmount, campaign.costPerPlant);
+  const availability = calculatePlantAvailability(campaign);
+  const isCampaignClosed = campaign.daysLeft <= 0 || availability.isFullyFunded;
 
   const getRiskBadgeVariant = (risk: CampaignResponse['riskLevel']) => {
     switch (risk) {
@@ -64,23 +66,25 @@ export function CampaignDetailsCard({
             </p>
           </div>
 
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-green-600" />
-              <span className="text-sm text-muted-foreground">Fecha de Cierre</span>
+          {!isCampaignClosed && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-green-600" />
+                <span className="text-sm text-muted-foreground">Fecha de Cierre</span>
+              </div>
+              <p className="text-xl font-bold">
+                {new Date(campaign.closingDate).toLocaleDateString('es-PY', {
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric'
+                })}
+              </p>
+              <p className={`text-sm font-medium ${availability.isFullyFunded && campaign.daysLeft > 0 ? 'text-green-600' : timeInfo.color
+                }`}>
+                {timeInfo.text}
+              </p>
             </div>
-            <p className="text-xl font-bold">
-              {new Date(campaign.closingDate).toLocaleDateString('es-PY', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric'
-              })}
-            </p>
-            <p className={`text-sm font-medium ${timeInfo.color}`}>
-              {timeInfo.text}
-            </p>
-          </div>
-
+          )}
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-green-600" />
