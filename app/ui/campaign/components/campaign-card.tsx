@@ -37,8 +37,9 @@ export function CampaignCard({ campaign }: CampaignCardProps) {
         <Image
           src={campaign.imageUrl}
           alt={campaign.title}
-          className={`h-full w-full object-cover transition-all duration-300 ${campaign.isInvestedByUser ? 'blur-sm scale-105' : ''
-            }`}
+          className={`h-full w-full object-cover transition-all duration-300 ${
+            campaign.isInvestedByUser || isCampaignClosed ? 'blur-sm scale-105' : ''
+          }`}
           width={500}
           height={500}
         />
@@ -53,12 +54,12 @@ export function CampaignCard({ campaign }: CampaignCardProps) {
           </div>
         )}
 
-        {/* Indicador de campaña cerrada por tiempo (solo si NO está 100% financiada) */}
-        {!campaign.isInvestedByUser && isClosedByTime && (
+        {/* Indicador de campaña cerrada - centrado */}
+        {!campaign.isInvestedByUser && isCampaignClosed && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-            <Badge variant="secondary" className="bg-gray-600 text-white border-gray-700 px-4 py-2 text-sm font-semibold shadow-lg">
-              <XCircle className="h-4 w-4 mr-2" />
-              Cerrada
+            <Badge variant="secondary" className="bg-green-500 text-white border-green-600 px-4 py-2 text-sm font-semibold shadow-lg hover:bg-green-600">
+              <CheckCircle className="h-4 w-4 mr-2" />
+              {isFullyFunded ? '100% Financiada' : 'Cerrada'}
             </Badge>
           </div>
         )}

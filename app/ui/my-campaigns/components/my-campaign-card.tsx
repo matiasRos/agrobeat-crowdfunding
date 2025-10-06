@@ -1,9 +1,9 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MapPin, TrendingUp } from "lucide-react";
 import { CampaignResponse } from "@/app/types/campaign";
 import { getCurrentCampaignStage, formatCurrency } from "@/lib/utils";
+import { PaymentStatusBadge } from "@/app/ui/shared/components";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -13,6 +13,7 @@ interface MyCampaignCardProps {
     id: number;
     amount: string;
     plantCount: number;
+    isPaid: boolean;
     createdAt: Date;
   };
 }
@@ -27,7 +28,7 @@ export function MyCampaignCard({ campaign, userInvestment }: MyCampaignCardProps
         <div className="flex gap-4">
           {/* Imagen a la izquierda */}
           <div className="flex-shrink-0">
-            <div className="relative w-20 h-20 overflow-hidden rounded-lg  p-3 bg-gray-100">
+            <div className="relative w-20 h-20 overflow-hidden rounded-lg  p-3 bg-muted">
               <Image
                 src={campaign.iconUrl || campaign.imageUrl}
                 alt={campaign.title}
@@ -40,8 +41,11 @@ export function MyCampaignCard({ campaign, userInvestment }: MyCampaignCardProps
 
           {/* Contenido a la derecha */}
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold line-clamp-1">{userInvestment.plantCount} plantas de {campaign.crop}</h3>
-            <div className="flex items-center gap-1">
+            <div className="flex items-start justify-between gap-2">
+              <h3 className="font-semibold line-clamp-1">{userInvestment.plantCount} plantas de {campaign.crop}</h3>
+              <PaymentStatusBadge isPaid={userInvestment.isPaid} />
+            </div>
+            <div className="flex items-center gap-1 mt-1">
               <MapPin className="h-3 w-3" />
               <a
                 href={campaign.mapsLink}
@@ -71,16 +75,16 @@ export function MyCampaignCard({ campaign, userInvestment }: MyCampaignCardProps
         </div>
 
         {/* Mi Inversión */}
-        <div className="rounded-lg bg-green-50 p-3">
-          <p className="text-xs text-green-700 font-medium">Mi Inversión</p>
+        <div className="rounded-lg bg-muted p-3">
+          <p className="text-xs  text-muted-foreground font-medium">Mi Inversión</p>
           <div className="flex justify-between items-center mt-1">
             <div>
-              <p className="text-sm font-medium text-green-800">
+              <p className="text-sm font-medium text-black">
                 {formatCurrency(parseFloat(userInvestment.amount))}
               </p>
             </div>
             <div className="text-right">
-              <p className="text-xs text-green-600">
+              <p className="text-xs text-muted-foreground">
                 Invertido el {new Date(userInvestment.createdAt).toLocaleDateString('es-PY')}
               </p>
             </div>

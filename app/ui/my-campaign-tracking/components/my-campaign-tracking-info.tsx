@@ -18,6 +18,7 @@ interface UserInvestment {
   id: number;
   amount: string;
   plantCount: number;
+  isPaid: boolean;
   createdAt: Date;
 }
 

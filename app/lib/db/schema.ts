@@ -94,6 +94,28 @@ export const passwordResetTokens = pgTable('password_reset_tokens', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
+// Tabla de stories de campañas
+export const campaignStories = pgTable('campaign_stories', {
+  id: serial('id').primaryKey(),
+  campaignId: integer('campaign_id').references(() => campaigns.id).notNull(),
+  mediaUrl: varchar('media_url', { length: 500 }).notNull(),
+  mediaType: varchar('media_type', { length: 20 }).notNull().default('image'), // 'image' o 'video'
+  caption: text('caption'),
+  description: text('description'),
+  displayOrder: integer('display_order').notNull().default(0),
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Tabla de visualizaciones de stories
+export const storyViews = pgTable('story_views', {
+  id: serial('id').primaryKey(),
+  storyId: integer('story_id').references(() => campaignStories.id).notNull(),
+  userId: integer('user_id').references(() => users.id).notNull(),
+  viewedAt: timestamp('viewed_at').defaultNow().notNull(),
+});
+
 // Definir relaciones para Drizzle ORM
 export const usersRelations = relations(users, ({ many }) => ({
   investments: many(investments),
@@ -113,6 +135,7 @@ export const campaignsRelations = relations(campaigns, ({ one, many }) => ({
     fields: [campaigns.id],
     references: [campaignTimeline.campaignId],
   }),
+  stories: many(campaignStories),
 }));
 
 export const investmentsRelations = relations(investments, ({ one }) => ({
@@ -140,6 +163,25 @@ export const passwordResetTokensRelations = relations(passwordResetTokens, ({ on
   }),
 }));
 
+export const campaignStoriesRelations = relations(campaignStories, ({ one, many }) => ({
+  campaign: one(campaigns, {
+    fields: [campaignStories.campaignId],
+    references: [campaigns.id],
+  }),
+  views: many(storyViews),
+}));
+
+export const storyViewsRelations = relations(storyViews, ({ one }) => ({
+  story: one(campaignStories, {
+    fields: [storyViews.storyId],
+    references: [campaignStories.id],
+  }),
+  user: one(users, {
+    fields: [storyViews.userId],
+    references: [users.id],
+  }),
+}));
+
 // Tipos TypeScript inferidos del esquema
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
@@ -158,3 +200,9 @@ export type NewCampaignTimeline = typeof campaignTimeline.$inferInsert;
 
 export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
 export type NewPasswordResetToken = typeof passwordResetTokens.$inferInsert;
+
+export type CampaignStory = typeof campaignStories.$inferSelect;
+export type NewCampaignStory = typeof campaignStories.$inferInsert;
+
+export type StoryView = typeof storyViews.$inferSelect;
+export type NewStoryView = typeof storyViews.$inferInsert;

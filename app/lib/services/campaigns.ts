@@ -49,10 +49,29 @@ const mapCampaignToResponse = (campaign: any, producer: any, investmentStats: an
 export class CampaignService {
   /**
    * Obtiene todas las campañas activas con sus estadísticas de inversión
-   * @param userId - ID del usuario para marcar campañas en las que ya invirtió
+   * @param userId - ID del usuario para excluir campañas en las que ya invirtió
    */
   static async getAllCampaigns(userId?: number): Promise<CampaignResponse[]> {
     try {
+      // Construir la condición WHERE base
+      const whereConditions = [eq(campaigns.isActive, true)];
+      
+      // Si hay userId, excluir campañas en las que el usuario ya invirtió
+      if (userId) {
+        whereConditions.push(
+          notExists(
+            db.select()
+              .from(investments)
+              .where(
+                and(
+                  eq(investments.campaignId, campaigns.id),
+                  eq(investments.userId, userId)
+                )
+              )
+          )
+        );
+      }
+
       // Obtener campañas con sus productores y cronograma
       const campaignsWithProducers = await db
         .select({
@@ -63,7 +82,7 @@ export class CampaignService {
         .from(campaigns)
         .leftJoin(producers, eq(campaigns.producerId, producers.id))
         .leftJoin(campaignTimeline, eq(campaigns.id, campaignTimeline.campaignId))
-        .where(eq(campaigns.isActive, true))
+        .where(and(...whereConditions))
         .orderBy(asc(campaigns.id));
 
       // Obtener estadísticas de inversión para cada campaña
@@ -88,22 +107,10 @@ export class CampaignService {
         });
       });
 
-      // Si hay usuario, obtener sus inversiones para marcar las campañas
-      let userInvestmentIds = new Set<number>();
-      if (userId) {
-        const userInvestments = await db
-          .select({ campaignId: investments.campaignId })
-          .from(investments)
-          .where(eq(investments.userId, userId));
-        
-        userInvestmentIds = new Set(userInvestments.map(inv => inv.campaignId));
-      }
-
-      // Mapear los resultados
+      // Mapear los resultados (todas las campañas ya están filtradas, ninguna está invertida por el usuario)
       return campaignsWithProducers.map(row => {
         const stats = statsMap.get(row.campaign.id) || { raisedAmount: '0.00', investorCount: 0 };
-        const isInvestedByUser = userInvestmentIds.has(row.campaign.id);
-        return mapCampaignToResponse(row.campaign, row.producer, stats, row.timeline, isInvestedByUser);
+        return mapCampaignToResponse(row.campaign, row.producer, stats, row.timeline, false);
       });
     } catch (error) {
       console.error('Error fetching campaigns:', error);

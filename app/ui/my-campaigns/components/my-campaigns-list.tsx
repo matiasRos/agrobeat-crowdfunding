@@ -79,6 +79,7 @@ export async function MyCampaignsList() {
                   id: investment.id,
                   amount: investment.amount,
                   plantCount: investment.plantCount,
+                  isPaid: investment.isPaid,
                   createdAt: investment.createdAt,
                 }}
               />
