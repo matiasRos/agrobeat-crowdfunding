@@ -29,17 +29,16 @@ export function CampaignCard({ campaign }: CampaignCardProps) {
   const isFullyFunded = availability.isFullyFunded;
   const isClosedByTime = campaign.daysLeft <= 0 && !isFullyFunded;
 
-  return (
-    <Link href={`/dashboard/campaigns/${campaign.id}`} className="block">
-      <Card className="overflow-hidden transition-all hover:shadow-lg cursor-pointer">
-        {/* Imagen */}
-        <div className="relative h-48 overflow-hidden">
+  // Contenido del card
+  const cardContent = (
+    <Card className={`overflow-hidden transition-all ${!isCampaignClosed ? 'hover:shadow-lg cursor-pointer' : 'cursor-default'}`}>
+      {/* Imagen */}
+      <div className="relative h-48 overflow-hidden">
         <Image
           src={campaign.imageUrl}
           alt={campaign.title}
-          className={`h-full w-full object-cover transition-all duration-300 ${
-            campaign.isInvestedByUser || isCampaignClosed ? 'blur-sm scale-105' : ''
-          }`}
+          className={`h-full w-full object-cover transition-all duration-300 ${campaign.isInvestedByUser || isCampaignClosed ? 'blur-sm scale-105' : ''
+            }`}
           width={500}
           height={500}
         />
@@ -111,12 +110,12 @@ export function CampaignCard({ campaign }: CampaignCardProps) {
           <div className="space-y-1">
             <div className="flex items-center justify-center gap-1">
               <Clock className={`h-3 w-3 ${isFullyFunded ? 'text-green-600' :
-                  isClosedByTime ? 'text-gray-600' :
-                    timeInfo.color
+                isClosedByTime ? 'text-gray-600' :
+                  timeInfo.color
                 }`} />
               <span className={`text-sm font-medium ${isFullyFunded ? 'text-green-600' :
-                  isClosedByTime ? 'text-gray-600' :
-                    timeInfo.color
+                isClosedByTime ? 'text-gray-600' :
+                  timeInfo.color
                 }`}>
                 {isCampaignClosed ? 'Cerrada' : timeInfo.text}
               </span>
@@ -158,16 +157,29 @@ export function CampaignCard({ campaign }: CampaignCardProps) {
           </p>
         </div>
       </CardContent>
+      {!isCampaignClosed && (
+        <CardFooter>
+          {/*Mostrar solo si está disponible para invertir*/}
 
-      <CardFooter>
-        <Button
-          className="w-full"
-          variant="default"
-        >
-          Ver detalles
-        </Button>
-      </CardFooter>
-    </Card>
+          <Button
+            className="w-full"
+            variant="default"
+          >
+            Ver detalles
+          </Button>
+        </CardFooter>
+      )}
+    </Card> 
+  );
+
+  // Solo permitir redirección si la campaña NO está cerrada
+  if (isCampaignClosed) {
+    return cardContent;
+  }
+
+  return (
+    <Link href={`/dashboard/campaigns/${campaign.id}`} className="block">
+      {cardContent}
     </Link>
   );
 }

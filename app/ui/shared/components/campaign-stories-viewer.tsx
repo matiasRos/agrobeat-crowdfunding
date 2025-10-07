@@ -35,13 +35,22 @@ export function CampaignStoriesViewer({
   const [progress, setProgress] = useState(0);
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [isMediaLoaded, setIsMediaLoaded] = useState(false);
+  const [videoDuration, setVideoDuration] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   // Duración de cada story en milisegundos
-  const STORY_DURATION = 5000;
+  const IMAGE_STORY_DURATION = 5000;
   // Ancho de las áreas de navegación lateral (en porcentaje)
   const NAVIGATION_AREA_WIDTH = 25; // 25% por cada lado
+  
+  // Obtener la duración actual basada en el tipo de media
+  const currentStory = stories[currentIndex];
+  const currentDuration = currentStory?.type === 'video' && videoDuration 
+    ? videoDuration * 1000 // Convertir segundos a milisegundos
+    : IMAGE_STORY_DURATION;
 
   // Resetear estado cuando se monta el componente
   useEffect(() => {
@@ -60,14 +69,16 @@ export function CampaignStoriesViewer({
       setCurrentIndex(newIndex);
       setProgress(0);
       setIsDescriptionExpanded(false); // Resetear expansión al cambiar de story
+      setIsMediaLoaded(false); // Resetear estado de carga al cambiar de story
+      setVideoDuration(null); // Resetear duración del video al cambiar de story
       onStoryViewed?.(stories[newIndex].id);
     }
   }, [stories, onStoryViewed]);
 
   // Auto-avance del progreso y cambio automático de story
   useEffect(() => {
-    // No iniciar el intervalo si está pausado
-    if (isPaused) {
+    // No iniciar el intervalo si está pausado o si la media no está cargada
+    if (isPaused || !isMediaLoaded) {
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
         progressIntervalRef.current = null;
@@ -77,7 +88,7 @@ export function CampaignStoriesViewer({
 
     progressIntervalRef.current = setInterval(() => {
       setProgress((prev) => {
-        const newProgress = prev + (100 / (STORY_DURATION / 100));
+        const newProgress = prev + (100 / (currentDuration / 100));
         
         if (newProgress >= 100) {
           // Pasar al siguiente story automáticamente
@@ -100,7 +111,7 @@ export function CampaignStoriesViewer({
         clearInterval(progressIntervalRef.current);
       }
     };
-  }, [currentIndex, stories.length, onClose, goToIndex, isPaused]);
+  }, [currentIndex, stories.length, onClose, goToIndex, isPaused, isMediaLoaded, currentDuration]);
 
   // Manejar clics en el contenedor
   const handleClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
@@ -171,7 +182,6 @@ export function CampaignStoriesViewer({
     };
   }, []);
 
-  const currentStory = stories[currentIndex];
   const hasDescription = currentStory.description && currentStory.description.trim().length > 0;
   const descriptionLength = currentStory.description?.length || 0;
   const shouldTruncate = descriptionLength > 150; // Truncar si es mayor a 150 caracteres
@@ -240,25 +250,48 @@ export function CampaignStoriesViewer({
               fill
               className="object-contain"
               priority
+              onLoadingComplete={() => setIsMediaLoaded(true)}
+              onError={() => setIsMediaLoaded(true)}
             />
+            {/* Indicador de carga */}
+            {!isMediaLoaded && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/80">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+              </div>
+            )}
           </div>
         ) : (
-          <video
-            src={currentStory.url}
-            className="w-full h-full object-contain"
-            autoPlay
-            playsInline
-            onEnded={() => {
-              if (currentIndex < stories.length - 1) {
-                goToIndex(currentIndex + 1);
-                setIsPaused(false);
-              } else {
-                onClose();
-              }
-            }}
-            onPause={() => setIsPaused(true)}
-            onPlay={() => setIsPaused(false)}
-          />
+          <>
+            <video
+              ref={videoRef}
+              src={currentStory.url}
+              className="w-full h-full object-contain"
+              autoPlay
+              playsInline
+              onLoadedMetadata={(e) => {
+                const video = e.currentTarget;
+                setVideoDuration(video.duration);
+              }}
+              onLoadedData={() => setIsMediaLoaded(true)}
+              onEnded={() => {
+                if (currentIndex < stories.length - 1) {
+                  goToIndex(currentIndex + 1);
+                  setIsPaused(false);
+                } else {
+                  onClose();
+                }
+              }}
+              onPause={() => setIsPaused(true)}
+              onPlay={() => setIsPaused(false)}
+              onError={() => setIsMediaLoaded(true)}
+            />
+            {/* Indicador de carga para videos */}
+            {!isMediaLoaded && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/80">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+              </div>
+            )}
+          </>
         )}
 
         {/* Áreas de toque invisibles para navegación (visual feedback) */}

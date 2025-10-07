@@ -110,7 +110,7 @@ export function CampaignDetailsCard({
         {showTimeline && campaign.timeline && campaign.timeline.events.length > 0 && (
           <>
             <Separator />
-            <CampaignTimeline campaign={campaign} showAsCard={false} />
+            <CampaignTimeline campaign={campaign} />
           </>
         )}
       </CardContent>

@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import Image from 'next/image';
 import { CampaignStoriesViewer } from '@/app/ui/shared/components';
 import { markStoryViewedAction } from '@/app/actions/mark-story-viewed';
+import { useStoriesViewer } from './stories-viewer-context';
 
 interface Story {
   id: number;
@@ -27,7 +28,7 @@ export function CampaignStoriesClient({
   campaignTitle,
   iconUrl 
 }: CampaignStoriesClientProps) {
-  const [isStoriesOpen, setIsStoriesOpen] = useState(false);
+  const { isOpen, initialIndex: contextInitialIndex, openStories, closeStories } = useStoriesViewer();
   // Estado local para tracking de vistas (optimistic update)
   const [localStories, setLocalStories] = useState(initialStories);
 
@@ -56,36 +57,48 @@ export function CampaignStoriesClient({
     return firstUnviewedIndex === -1 ? 0 : firstUnviewedIndex;
   })();
 
+  // Determinar qué índice usar: el del contexto si está abierto, sino el calculado
+  const effectiveInitialIndex = isOpen ? contextInitialIndex : currentInitialIndex;
+
   return (
     <>
-      <div className="relative">
-        <button
-          onClick={() => setIsStoriesOpen(true)}
-          className="relative w-20 h-20 overflow-hidden rounded-full bg-muted p-4 cursor-pointer hover:opacity-80 transition-opacity ring-4 ring-white/50 hover:ring-white"
-          aria-label="Ver galería de imágenes"
-        >
-          <Image
-            src={iconUrl}
-            alt={campaignTitle}
-            className="h-full w-full object-cover"
-            width={80}
-            height={80}
-          />
-        </button>
-        
-        {/* Indicador de stories no vistos - círculo verde fuera del botón */}
+      <div className="relative flex flex-col items-center gap-1">
+        <div className="relative">
+          <button
+            onClick={() => openStories(currentInitialIndex)}
+            className="relative w-20 h-20 overflow-hidden rounded-full bg-muted p-4 cursor-pointer hover:opacity-80 transition-opacity ring-4 ring-white/50 hover:ring-white"
+            aria-label="Ver galería de imágenes"
+          >
+            <Image
+              src={iconUrl}
+              alt={campaignTitle}
+              className="h-full w-full object-cover"
+              width={80}
+              height={80}
+            />
+          </button>
+          
+          {/* Indicador de stories no vistos - círculo verde fuera del botón */}
+          {hasUnviewedStories && (
+            <div className="absolute inset-0 rounded-full ring-[3px] ring-green-500 pointer-events-none" />
+          )}
+        </div>
+
+        {/* Badge de novedades */}
         {hasUnviewedStories && (
-          <div className="absolute inset-0 rounded-full ring-[3px] ring-green-500 pointer-events-none" />
+          <span className="bg-green-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap">
+            ¡Novedades!
+          </span>
         )}
       </div>
 
       {/* Visor de stories - solo renderizar cuando está abierto */}
-      {isStoriesOpen && (
+      {isOpen && (
         <CampaignStoriesViewer
           stories={localStories}
-          initialIndex={currentInitialIndex}
-          isOpen={isStoriesOpen}
-          onClose={() => setIsStoriesOpen(false)}
+          initialIndex={effectiveInitialIndex}
+          isOpen={isOpen}
+          onClose={closeStories}
           campaignTitle={campaignTitle}
           onStoryViewed={handleStoryViewed}
         />

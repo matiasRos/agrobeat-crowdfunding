@@ -4,6 +4,7 @@ import { Separator } from '@/components/ui/separator';
 import { CampaignTimeline } from '@/app/ui/campaign-detail/components/campaign-timeline';
 import { ProducerInfoCard } from '@/app/ui/shared/components/producer-info-card';
 import { CampaignDetailsCard } from '@/app/ui/shared/components/campaign-details-card';
+import { CampaignImagesLoader } from './campaign-images-loader';
 import { calculateCampaignInvestmentReturn, formatCurrency } from '@/lib/utils';
 import {
   Sprout,
@@ -39,7 +40,7 @@ export function MyCampaignTrackingInfo({ campaign, userInvestment }: MyCampaignT
   };
 
   return (
-    <div className="grid gap-3 lg:grid-cols-3">
+    <div className="max-w-full sm:max-w-[1200px] mx-auto">
       {/* Mi Inversión Detallada */}
       <Card className="lg:col-span-2">
         <CardHeader>
@@ -94,8 +95,62 @@ export function MyCampaignTrackingInfo({ campaign, userInvestment }: MyCampaignT
             </div>
           </div>
 
+          {/* Cronograma de la campaña y Galería de Imágenes */}
+          {campaign.timeline && campaign.timeline.events.length > 0 && (
+            <>
+              <Separator />
+              <div className="grid gap-6 md:grid-cols-2">
+                {/* Galería de Imágenes */}
+                <CampaignImagesLoader
+                  campaignId={campaign.id}
+                  campaignTitle={campaign.title}
+                />
+                {/* Timeline */}
+                <div>
+                  <CampaignTimeline campaign={campaign} />
+                </div>
+              </div>
+            </>
+          )}
+
           <Separator />
 
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <PieChart className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Mi participación en la campaña</span>
+              </div>
+              <p className="text-xl font-bold">
+                {calculateMyParticipation().toFixed(2)}%
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Del total recaudado hasta ahora
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Estado de la campaña</span>
+              </div>
+              <p className={`text-lg font-bold ${campaign.daysLeft <= 0 ? 'text-green-600' :
+                campaign.daysLeft <= 3 ? 'text-red-600' :
+                  campaign.daysLeft <= 7 ? 'text-orange-600' :
+                    'text-blue-600'
+                }`}>
+                {campaign.daysLeft <= 0 ? 'En Producción' :
+                  campaign.daysLeft === 1 ? 'Último día' :
+                    `${campaign.daysLeft} días restantes`}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {campaign.daysLeft <= 0 ? 'La campaña está en fase de producción' : 'Para el cierre de reservas'}
+              </p>
+            </div>
+          </div>
+
+
+          <Separator />
           {/* Desglose del cálculo de retorno */}
           <div className="bg-muted rounded-lg p-4 space-y-3">
             <h4 className="font-medium text-sm">Desglose del retorno esperado</h4>
@@ -128,66 +183,18 @@ export function MyCampaignTrackingInfo({ campaign, userInvestment }: MyCampaignT
               </div>
             </div>
           </div>
-
-          <Separator />
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <PieChart className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Mi participación en la campaña</span>
-              </div>
-              <p className="text-xl font-bold">
-                {calculateMyParticipation().toFixed(2)}%
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Del total recaudado hasta ahora
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Estado de la campaña</span>
-              </div>
-              <p className={`text-lg font-bold ${
-                campaign.daysLeft <= 0 ? 'text-green-600' :
-                campaign.daysLeft <= 3 ? 'text-red-600' :
-                campaign.daysLeft <= 7 ? 'text-orange-600' :
-                'text-blue-600'
-              }`}>
-                {campaign.daysLeft <= 0 ? 'En Producción' :
-                 campaign.daysLeft === 1 ? 'Último día' :
-                 `${campaign.daysLeft} días restantes`}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {campaign.daysLeft <= 0 ? 'La campaña está en fase de producción' : 'Para el cierre de reservas'}
-              </p>
-            </div>
-          </div>
-
-          {/* Cronograma de la campaña */}
-          {campaign.timeline && campaign.timeline.events.length > 0 && (
-            <>
-              <Separator />
-              <CampaignTimeline campaign={campaign} showAsCard={false} />
-            </>
-          )}
         </CardContent>
       </Card>
 
       {/* Información del Productor y Campaña */}
-      <div className="space-y-3">
+      <div className="space-y-3 mt-4">
         {/* Información del productor */}
-        <ProducerInfoCard 
+        <ProducerInfoCard
           producer={campaign.producer}
           location={campaign.location}
           mapsLink={campaign.mapsLink}
           avatarUrl="/osval-foto.jpg"
         />
-
-        {/* Detalles de la campaña */}
-        <CampaignDetailsCard campaign={campaign} showTimeline={false} />
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 import { CampaignResponse } from '@/app/types/campaign';
 import { MyCampaignTrackingHero } from './my-campaign-tracking-hero';
 import { MyCampaignTrackingInfo } from './my-campaign-tracking-info';
+import { StoriesViewerProvider } from './stories-viewer-context';
 
 
 interface UserInvestment {
@@ -19,7 +20,7 @@ interface MyCampaignTrackingContentProps {
 
 export function MyCampaignTrackingContent({ campaign, userInvestment }: MyCampaignTrackingContentProps) {
   return (
-    <>
+    <StoriesViewerProvider>
       {/* Hero section con información de seguimiento */}
       <MyCampaignTrackingHero campaign={campaign} userInvestment={userInvestment} />
       
@@ -31,6 +32,6 @@ export function MyCampaignTrackingContent({ campaign, userInvestment }: MyCampai
           </div>
         </div>
       </div>
-    </>
+    </StoriesViewerProvider>
   );
 }
