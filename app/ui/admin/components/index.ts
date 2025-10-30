@@ -10,3 +10,5 @@ export { CampaignsAdminListSection } from './campaigns-admin-list-section';
 export { CampaignsAdminTable } from './campaigns-admin-table';
 export { CampaignsAdminData } from './campaigns-admin-data';
 export { CampaignStatusToggle } from './campaign-status-toggle';
+export { CampaignActionsMenu } from './campaign-actions-menu';
+export { SendNotificationDialog } from './send-notification-dialog';

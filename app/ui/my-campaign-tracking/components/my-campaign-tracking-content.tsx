@@ -10,7 +10,6 @@ interface UserInvestment {
   plantCount: number;
   isPaid: boolean;
   createdAt: Date;
-  campaign: CampaignResponse;
 }
 
 interface MyCampaignTrackingContentProps {

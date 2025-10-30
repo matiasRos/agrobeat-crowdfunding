@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { CampaignStatusToggle } from "./campaign-status-toggle";
+import { CampaignActionsMenu } from "./campaign-actions-menu";
 import { TablePagination } from "@/app/ui/shared/components";
 
 interface Campaign {
@@ -101,12 +102,13 @@ export function CampaignsAdminTable({
             <TableHead className="text-center">Inversores</TableHead>
             <TableHead className="text-center">Cierre</TableHead>
             <TableHead className="text-center">Estado</TableHead>
+            <TableHead className="text-center">Acciones</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {campaigns.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+              <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                 No hay campañas registradas
               </TableCell>
             </TableRow>
@@ -153,6 +155,14 @@ export function CampaignsAdminTable({
                       campaignId={campaign.id}
                       isActive={campaign.isActive}
                       campaignTitle={campaign.title}
+                    />
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <CampaignActionsMenu
+                      campaignId={campaign.id}
+                      campaignTitle={campaign.title}
+                      crop={campaign.crop}
+                      investorCount={campaign.investorCount}
                     />
                   </TableCell>
                 </TableRow>

@@ -5,9 +5,13 @@ import { CampaignResponse } from '@/app/types/campaign';
 
 // Helper function to map DB campaign to API response format
 const mapCampaignToResponse = (campaign: any, producer: any, investmentStats: any, timeline?: any, isInvestedByUser?: boolean): CampaignResponse => {
-  // Calcular días restantes dinámicamente
+  // Calcular días restantes dinámicamente normalizando fechas
   const closingDate = new Date(campaign.closingDate);
+  closingDate.setHours(23, 59, 59, 999); // Fin del día de cierre
+  
   const today = new Date();
+  today.setHours(0, 0, 0, 0); // Inicio del día actual
+  
   const diffTime = closingDate.getTime() - today.getTime();
   const daysLeft = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
 
@@ -721,6 +725,98 @@ export class CampaignService {
     } catch (error) {
       console.error(`Error toggling campaign status:`, error);
       throw new Error(`Failed to toggle campaign status`);
+    }
+  }
+
+  /**
+   * Obtiene una campaña con la inversión del usuario (si existe)
+   * @param requireInvestment - Si es true, retorna null si el usuario no tiene inversión
+   */
+  static async getCampaignWithUserInvestment(
+    campaignId: number,
+    userId: number,
+    requireInvestment: boolean = true
+  ): Promise<{
+    campaign: CampaignResponse;
+    userInvestment: {
+      id: number;
+      amount: string;
+      plantCount: number;
+      isPaid: boolean;
+      createdAt: Date;
+    };
+  } | null> {
+    try {
+      // Obtener campaña con productor, timeline e inversión del usuario en una sola consulta
+      const result = await db
+        .select({
+          campaign: campaigns,
+          producer: producers,
+          timeline: campaignTimeline,
+          investment: investments,
+        })
+        .from(campaigns)
+        .leftJoin(producers, eq(campaigns.producerId, producers.id))
+        .leftJoin(campaignTimeline, eq(campaigns.id, campaignTimeline.campaignId))
+        .leftJoin(
+          investments,
+          and(
+            eq(investments.campaignId, campaigns.id),
+            eq(investments.userId, userId)
+          )
+        )
+        .where(and(eq(campaigns.id, campaignId), eq(campaigns.isActive, true)))
+        .limit(1);
+
+      if (result.length === 0) {
+        return null;
+      }
+
+      // Si se requiere inversión y no existe, retornar null
+      if (requireInvestment && !result[0].investment) {
+        return null;
+      }
+
+      // Obtener estadísticas de inversión
+      const [investmentStats] = await db
+        .select({
+          raisedAmount: sql<string>`COALESCE(SUM(${investments.amount}), 0)::text`,
+          investorCount: count(sql`DISTINCT ${investments.userId}`),
+        })
+        .from(investments)
+        .where(eq(investments.campaignId, campaignId));
+
+      const stats = investmentStats || { raisedAmount: '0.00', investorCount: 0 };
+      const campaignResponse = mapCampaignToResponse(
+        result[0].campaign,
+        result[0].producer,
+        stats,
+        result[0].timeline,
+        !!result[0].investment
+      );
+
+      // Si no hay inversión (admin mode), retornar objeto dummy
+      const userInvestment = result[0].investment ? {
+        id: result[0].investment.id,
+        amount: result[0].investment.amount,
+        plantCount: result[0].investment.plantCount,
+        isPaid: result[0].investment.isPaid || false,
+        createdAt: result[0].investment.investedAt,
+      } : {
+        id: 0,
+        amount: '0',
+        plantCount: 0,
+        isPaid: false,
+        createdAt: new Date(),
+      };
+
+      return {
+        campaign: campaignResponse,
+        userInvestment,
+      };
+    } catch (error) {
+      console.error(`Error fetching campaign with user investment:`, error);
+      throw new Error(`Failed to fetch campaign with user investment`);
     }
   }
 }

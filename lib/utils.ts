@@ -377,3 +377,83 @@ export function formatTimeRemaining(
     color: includeCssClass ? 'text-muted-foreground' : undefined
   };
 }
+
+/**
+ * Formatea una fecha para mostrar en español
+ * @param date - Fecha a formatear (Date o string ISO)
+ * @param options - Opciones de formato Intl.DateTimeFormat
+ * @returns Fecha formateada en español
+ */
+export function formatDate(
+  date: Date | string,
+  options: Intl.DateTimeFormatOptions = {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  }
+): string {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  
+  return new Intl.DateTimeFormat('es-PY', options).format(dateObj);
+}
+
+/**
+ * Formatea una fecha en formato corto (dd/mm/yyyy)
+ * @param date - Fecha a formatear
+ * @returns Fecha en formato corto
+ */
+export function formatDateShort(date: Date | string): string {
+  return formatDate(date, {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+}
+
+/**
+ * Formatea un número de teléfono al formato internacional de Paraguay
+ * Solo formatea si el número parece ser paraguayo
+ * 
+ * @param phoneNumber - Número de teléfono a formatear
+ * @returns Número de teléfono en formato internacional (con +)
+ * 
+ * @example
+ * formatPhoneNumber('0981123456') // '+595981123456'
+ * formatPhoneNumber('981123456')  // '+595981123456'
+ * formatPhoneNumber('+595981123456') // '+595981123456'
+ */
+export function formatPhoneNumber(phoneNumber: string): string {
+  // Remover espacios, guiones, paréntesis y otros caracteres especiales
+  let cleaned = phoneNumber.replace(/[\s\-\(\)\.]/g, '');
+  
+  // Si ya tiene el prefijo +, validar y retornar
+  if (cleaned.startsWith('+')) {
+    return cleaned;
+  }
+  
+  // Si empieza con 0, reemplazar por código de país de Paraguay
+  if (cleaned.startsWith('0')) {
+    return '+595' + cleaned.substring(1);
+  }
+  
+  // Si ya tiene el código de país sin +, agregarlo
+  if (cleaned.startsWith('595')) {
+    return '+' + cleaned;
+  }
+  
+  // Por defecto, asumir que es un número paraguayo
+  return '+595' + cleaned;
+}
+
+/**
+ * Valida si un número de teléfono tiene un formato válido
+ * 
+ * @param phoneNumber - Número de teléfono a validar
+ * @returns true si el formato es válido
+ */
+export function isValidPhoneNumber(phoneNumber: string): boolean {
+  const formatted = formatPhoneNumber(phoneNumber);
+  // Validar que tenga al menos el formato +XXX con números (entre 10 y 15 dígitos)
+  const phoneRegex = /^\+\d{10,15}$/;
+  return phoneRegex.test(formatted);
+}
