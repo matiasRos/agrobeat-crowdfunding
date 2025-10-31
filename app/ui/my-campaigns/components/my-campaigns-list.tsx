@@ -1,6 +1,6 @@
 import { auth } from '@/app/auth';
 import { getUserInvestments } from '@/app/lib/services/campaigns';
-import { MyCampaignCard } from './my-campaign-card';
+import { MyCampaignsTabs } from './my-campaigns-tabs';
 
 // Función para agrupar inversiones por mes de cierre de campaña
 function groupInvestmentsByMonth(investments: any[]) {
@@ -28,10 +28,10 @@ function groupInvestmentsByMonth(investments: any[]) {
       )
     }))
     .sort((a, b) => {
-      // Ordenar grupos por el mes más temprano de cada grupo
+      // Ordenar grupos por el mes más temprano de cada grupo (descendente)
       const dateA = new Date(a.investments[0].campaign.closingDate);
       const dateB = new Date(b.investments[0].campaign.closingDate);
-      return dateA.getTime() - dateB.getTime();
+      return dateB.getTime() - dateA.getTime();
     });
 }
 
@@ -55,38 +55,5 @@ export async function MyCampaignsList() {
   // Agrupar inversiones por mes
   const investmentsByMonth = groupInvestmentsByMonth(userInvestments);
 
-  return (
-    <div className="space-y-8">
-      {investmentsByMonth.map(({ month, investments: monthInvestments }) => (
-        <div key={month} className="space-y-4">
-          {/* Subtítulo del mes */}
-          <div className="border-b border-border pb-2">
-            <h3 className="text-xl font-semibold text-foreground capitalize">
-              {month}
-            </h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              {monthInvestments.length} {monthInvestments.length === 1 ? 'inversión' : 'inversiones'} activa{monthInvestments.length === 1 ? '' : 's'}
-            </p>
-          </div>
-          
-          {/* Grid de campañas del mes */}
-          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-            {monthInvestments.map((investment) => (
-              <MyCampaignCard 
-                key={investment.campaign.id} 
-                campaign={investment.campaign}
-                userInvestment={{
-                  id: investment.id,
-                  amount: investment.amount,
-                  plantCount: investment.plantCount,
-                  isPaid: investment.isPaid,
-                  createdAt: investment.createdAt,
-                }}
-              />
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
+  return <MyCampaignsTabs investmentsByMonth={investmentsByMonth} />;
 }

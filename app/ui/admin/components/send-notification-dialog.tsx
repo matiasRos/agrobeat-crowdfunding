@@ -15,12 +15,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { sendCampaignUpdateNotificationAction } from '@/app/actions/send-campaign-update-notification';
 import { sendCampaignClosingReminderAction } from '@/app/actions/send-campaign-closing-reminder';
-import { getNotifiableInvestorsCount, getNonInvestorsCount } from '@/app/lib/whatsapp-templates';
+import { sendNewCampaignNotificationAction } from '@/app/actions/send-new-campaign-notification';
+import { getNotifiableInvestorsCount, getNonInvestorsCount, getPotentialInvestorsCount } from '@/app/lib/whatsapp-templates';
 
 /**
  * Tipo de notificación a enviar
  */
-type NotificationType = 'update' | 'closing-reminder';
+type NotificationType = 'update' | 'closing-reminder' | 'new-campaign';
 
 interface SendNotificationDialogProps {
   open: boolean;
@@ -36,6 +37,16 @@ interface SendNotificationDialogProps {
  * Configuración de diálogo según tipo de notificación
  */
 const notificationConfig = {
+  'new-campaign': {
+    title: 'Anunciar nueva campaña disponible',
+    description: 'Se enviará una notificación por WhatsApp a usuarios que NO han invertido en esta campaña.',
+    recipientsLabel: 'Usuarios a notificar:',
+    recipientsBadgeText: 'sin inversión en esta campaña',
+    emptyMessage: 'No hay usuarios sin inversión con número de teléfono para esta campaña.',
+    templateName: 'nueva_campania_disponible',
+    successTitle: '¡Notificaciones enviadas!',
+    errorTitle: 'Error al enviar notificaciones',
+  },
   'update': {
     title: 'Notificar actualizaciones de campaña',
     description: 'Se enviará una notificación por WhatsApp a los inversores de esta campaña.',
@@ -85,9 +96,15 @@ export function SendNotificationDialog({
   useEffect(() => {
     if (open) {
       setIsLoadingCount(true);
-      const countFunction = notificationType === 'update' 
-        ? getNotifiableInvestorsCount 
-        : getNonInvestorsCount;
+      
+      let countFunction;
+      if (notificationType === 'update') {
+        countFunction = getNotifiableInvestorsCount;
+      } else if (notificationType === 'new-campaign') {
+        countFunction = getPotentialInvestorsCount;
+      } else {
+        countFunction = getNonInvestorsCount;
+      }
 
       countFunction(campaignId)
         .then(count => {
@@ -106,9 +123,14 @@ export function SendNotificationDialog({
   const handleSendNotification = (isTestMode: boolean = false) => {
     startTransition(async () => {
       try {
-        const actionFunction = notificationType === 'update'
-          ? sendCampaignUpdateNotificationAction
-          : sendCampaignClosingReminderAction;
+        let actionFunction;
+        if (notificationType === 'update') {
+          actionFunction = sendCampaignUpdateNotificationAction;
+        } else if (notificationType === 'new-campaign') {
+          actionFunction = sendNewCampaignNotificationAction;
+        } else {
+          actionFunction = sendCampaignClosingReminderAction;
+        }
 
         const result = await actionFunction(campaignId, isTestMode);
 

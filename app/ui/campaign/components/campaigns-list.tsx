@@ -1,7 +1,7 @@
 import { CampaignService } from '@/app/lib/services/campaigns';
-import { CampaignCard } from './campaign-card';
 import { CampaignResponse } from '@/app/types/campaign';
 import { auth } from '@/app/auth';
+import { CampaignsTabs } from './campaigns-tabs';
 
 // Función para agrupar campañas por mes
 function groupCampaignsByMonth(campaigns: CampaignResponse[]) {
@@ -29,10 +29,10 @@ function groupCampaignsByMonth(campaigns: CampaignResponse[]) {
       )
     }))
     .sort((a, b) => {
-      // Ordenar grupos por el mes más temprano de cada grupo
+      // Ordenar grupos por el mes más temprano de cada grupo (descendente)
       const dateA = new Date(a.campaigns[0].closingDate);
       const dateB = new Date(b.campaigns[0].closingDate);
-      return dateA.getTime() - dateB.getTime();
+      return dateB.getTime() - dateA.getTime();
     });
 }
 
@@ -64,28 +64,5 @@ export async function CampaignsList() {
   // Agrupar campañas por mes
   const campaignsByMonth = groupCampaignsByMonth(campaigns);
 
-  return (
-    <div className="space-y-8">
-      {campaignsByMonth.map(({ month, campaigns: monthCampaigns }) => (
-        <div key={month} className="space-y-4">
-          {/* Subtítulo del mes */}
-          <div className="border-b border-border pb-2">
-            <h3 className="text-xl font-semibold text-foreground capitalize">
-              {month}
-            </h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              {monthCampaigns.length} {monthCampaigns.length === 1 ? 'campaña' : 'campañas'} disponible{monthCampaigns.length === 1 ? '' : 's'}
-            </p>
-          </div>
-          
-          {/* Grid de campañas del mes */}
-          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-            {monthCampaigns.map((campaign) => (
-              <CampaignCard key={campaign.id} campaign={campaign} />
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
+  return <CampaignsTabs campaignsByMonth={campaignsByMonth} />;
 }

@@ -5,7 +5,7 @@ import { CampaignTimeline } from '@/app/ui/campaign-detail/components/campaign-t
 import { ProducerInfoCard } from '@/app/ui/shared/components/producer-info-card';
 import { CampaignDetailsCard } from '@/app/ui/shared/components/campaign-details-card';
 import { CampaignImagesLoader } from './campaign-images-loader';
-import { calculateCampaignInvestmentReturn, formatCurrency } from '@/lib/utils';
+import { calculateCampaignInvestmentReturn, formatCurrency, calculatePlantAvailability } from '@/lib/utils';
 import {
   Sprout,
   TrendingUp,
@@ -32,6 +32,53 @@ export function MyCampaignTrackingInfo({ campaign, userInvestment }: MyCampaignT
   // Usar función utilitaria para calcular el retorno
   const calculations = calculateCampaignInvestmentReturn(userInvestment.plantCount, campaign);
   const { investmentAmount, estimatedIncome, netProfit, projectedReturn, totalReturn } = calculations;
+
+  // Calcular disponibilidad y estado de la campaña
+  const availability = calculatePlantAvailability(campaign);
+  const isCampaignClosed = campaign.daysLeft <= 0 || availability.isFullyFunded;
+
+  // Función para crear una fecha local sin problemas de zona horaria
+  const createLocalDate = (dateString: string) => {
+    const [year, month, day] = dateString.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  };
+
+  // Determinar si la campaña está en producción basándose en el timeline
+  const isInProduction = () => {
+    if (!campaign.timeline || !campaign.timeline.events.length) {
+      // Si no hay timeline, usar la fecha de cierre como referencia
+      return campaign.daysLeft <= 0;
+    }
+
+    // Obtener el primer evento del timeline (típicamente "Siembra")
+    const firstEvent = campaign.timeline.events[0];
+    const firstEventDate = createLocalDate(firstEvent.date);
+    const today = new Date();
+    
+    firstEventDate.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+
+    // Está en producción si ya llegó o pasó la fecha del primer evento
+    return firstEventDate <= today;
+  };
+
+  const getLastEvent = () => {
+    if (!campaign.timeline || !campaign.timeline.events.length) return null;
+    return campaign.timeline.events[campaign.timeline.events.length - 1];
+  };
+
+  const isCampaignFinished = () => {
+    const lastEvent = getLastEvent();
+    if (!lastEvent) return false;
+
+    const lastEventDate = createLocalDate(lastEvent.date);
+    const today = new Date();
+    
+    lastEventDate.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+
+    return lastEventDate < today;
+  };
 
   const calculateMyParticipation = () => {
     const myInvestment = parseFloat(userInvestment.amount);
@@ -134,17 +181,34 @@ export function MyCampaignTrackingInfo({ campaign, userInvestment }: MyCampaignT
                 <Clock className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm text-muted-foreground">Estado de la campaña</span>
               </div>
-              <p className={`text-lg font-bold ${campaign.daysLeft <= 0 ? 'text-green-600' :
+              <p className={`text-lg font-bold ${
+                isCampaignFinished() ? 'text-gray-600' :
+                isInProduction() ? 'text-green-600' :
+                isCampaignClosed ? 'text-green-600' :
                 campaign.daysLeft <= 3 ? 'text-red-600' :
-                  campaign.daysLeft <= 7 ? 'text-orange-600' :
-                    'text-blue-600'
-                }`}>
-                {campaign.daysLeft <= 0 ? 'En Producción' :
-                  campaign.daysLeft === 1 ? 'Último día' :
-                    `${campaign.daysLeft} días restantes`}
+                campaign.daysLeft <= 7 ? 'text-orange-600' :
+                'text-blue-600'
+              }`}>
+                {isCampaignFinished() ? (
+                  'Finalizada'
+                ) : isInProduction() ? (
+                  'En Producción'
+                ) : isCampaignClosed ? (
+                  'Financiamiento Completado'
+                ) : (
+                  campaign.daysLeft === 1 ? 'Último día' : `${campaign.daysLeft} días restantes`
+                )}
               </p>
               <p className="text-sm text-muted-foreground">
-                {campaign.daysLeft <= 0 ? 'La campaña está en fase de producción' : 'Para el cierre de reservas'}
+                {isCampaignFinished() ? (
+                  'La campaña ha completado todos sus eventos'
+                ) : isInProduction() ? (
+                  'La campaña está en fase de producción'
+                ) : isCampaignClosed ? (
+                  'La campaña alcanzó su meta de financiamiento'
+                ) : (
+                  'Para el cierre de reservas'
+                )}
               </p>
             </div>
           </div>

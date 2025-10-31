@@ -23,7 +23,7 @@ export async function MyCampaignsSection() {
 
   return (
     <section className="w-full">
-      <div className="mb-8">
+      <div className="mb-4">
         <h2 className="text-3xl font-bold mb-2">Mis producciones</h2>
         <p className="text-muted-foreground">
           Gestiona y monitorea tus producciones 

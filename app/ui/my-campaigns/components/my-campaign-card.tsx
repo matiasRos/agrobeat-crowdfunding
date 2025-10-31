@@ -1,6 +1,7 @@
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { MapPin, TrendingUp } from "lucide-react";
+"use client";
+
+import { motion } from "framer-motion";
+import { ArrowRight, MapPin } from "lucide-react";
 import { CampaignResponse } from "@/app/types/campaign";
 import { getCurrentCampaignStage, formatCurrency } from "@/lib/utils";
 import { PaymentStatusBadge } from "@/app/ui/shared/components";
@@ -22,85 +23,96 @@ export function MyCampaignCard({ campaign, userInvestment }: MyCampaignCardProps
   const stageInfo = getCurrentCampaignStage(campaign);
   const StageIcon = stageInfo.icon;
 
+  // Animaciones para Framer Motion
+  const cardAnimation = {
+    hover: {
+      scale: 1.02,
+      transition: { duration: 0.3 },
+    },
+  };
+
+  const imageAnimation = {
+    hover: {
+      scale: 1.15,
+      rotate: 5,
+      transition: { duration: 0.4 },
+    },
+  };
+
+  const arrowAnimation = {
+    hover: {
+      x: 5,
+      transition: { duration: 0.3 },
+    },
+  };
+
   return (
-    <Card className="overflow-hidden">
-      <CardHeader className="pb-3">
-        <div className="flex gap-4">
-          {/* Imagen a la izquierda */}
-          <div className="flex-shrink-0">
-            <div className="relative w-20 h-20 overflow-hidden rounded-lg  p-3 bg-muted">
-              <Image
-                src={campaign.iconUrl || campaign.imageUrl}
-                alt={campaign.title}
-                className="h-full w-full object-cover"
-                width={80}
-                height={80}
-              />
+    <Link href={`/dashboard/my-campaigns/${campaign.id}`}>
+      <motion.div
+        className="relative flex flex-col justify-between w-full p-6 overflow-hidden rounded-xl shadow-sm transition-shadow duration-300 ease-in-out group hover:shadow-lg bg-card text-card-foreground border"
+        variants={cardAnimation}
+        whileHover="hover"
+      >
+        <div className="relative flex flex-col h-full space-y-4">
+          {/* Header con título y badge */}
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <h3 className="text-xl font-bold tracking-tight line-clamp-1">
+                {userInvestment.plantCount} plantas de {campaign.crop}
+              </h3>
             </div>
+            <PaymentStatusBadge isPaid={userInvestment.isPaid} />
           </div>
 
-          {/* Contenido a la derecha */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2">
-              <h3 className="font-semibold line-clamp-1">{userInvestment.plantCount} plantas de {campaign.crop}</h3>
-              <PaymentStatusBadge isPaid={userInvestment.isPaid} />
+          {/* Información condensada */}
+          <div className="space-y-3">
+            {/* Etapa y Ubicación en una línea */}
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1.5">
+                <StageIcon className="h-3.5 w-3.5 flex-shrink-0" />
+                <span className="font-medium">{stageInfo.stage}</span>
+              </div>
+              <span>•</span>
+              <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
+                <span className="truncate">{campaign.location}</span>
+              </div>
             </div>
-            <div className="flex items-center gap-1 mt-1">
-              <MapPin className="h-3 w-3" />
-              <a
-                href={campaign.mapsLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-muted-foreground  hover:font-semibold"
-              >
-                <span className="truncate text-sm ">{campaign.location}</span>
-              </a>
-            </div>
-          </div>
-        </div>
-      </CardHeader>
 
-      <CardContent className="space-y-4">
-        {/* Etapa Actual */}
-        <div className={`rounded-lg p-3 ${stageInfo.colorClasses}`}>
-          <div className="flex items-center gap-2 mb-1">
-            <StageIcon className="h-4 w-4" />
-            <p className="text-xs font-medium">Etapa Actual</p>
-          </div>
-          <p className="text-sm font-semibold">{stageInfo.stage}</p>
-          <p className="text-xs mt-1">{stageInfo.description}</p>
-          {stageInfo.daysInfo && (
-            <p className="text-xs mt-1 font-medium">{stageInfo.daysInfo}</p>
-          )}
-        </div>
-
-        {/* Mi Inversión */}
-        <div className="rounded-lg bg-muted p-3">
-          <p className="text-xs  text-muted-foreground font-medium">Mi Inversión</p>
-          <div className="flex justify-between items-center mt-1">
-            <div>
-              <p className="text-sm font-medium text-black">
+            {/* Inversión sin container */}
+            <div className="pt-1">
+              <p className="text-xs text-muted-foreground font-medium">Mi Inversión</p>
+              <p className="text-2xl font-bold mt-1">
                 {formatCurrency(parseFloat(userInvestment.amount))}
               </p>
             </div>
-            <div className="text-right">
-              <p className="text-xs text-muted-foreground">
-                Invertido el {new Date(userInvestment.createdAt).toLocaleDateString('es-PY')}
-              </p>
+          </div>
+
+          {/* Link de acción */}
+          <div className="mt-auto pt-2">
+            <div className="flex items-center text-sm font-semibold group-hover:underline">
+              VER SEGUIMIENTO
+              <motion.div variants={arrowAnimation}>
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </motion.div>
             </div>
           </div>
         </div>
-        <div className="mt-4">
-          <Link href={`/dashboard/my-campaigns/${campaign.id}`}>
-            <Button className="w-full" variant="outline">
-              <TrendingUp className="h-4 w-4 mr-2" />
-              Hacer seguimiento
-            </Button>
-          </Link>
-        </div>
-        {/* Botón de seguimiento */}
 
-      </CardContent>
-    </Card>
+        {/* Imagen/Icono animado en la esquina */}
+        <motion.div
+          className="absolute -right-6 -bottom-6 w-32 h-32 opacity-100 pointer-events-none"
+          variants={imageAnimation}
+        >
+          <Image
+            src={campaign.iconUrl || campaign.imageUrl}
+            alt={campaign.title}
+            className="w-full h-full object-contain"
+            width={128}
+            height={128}
+          />
+        </motion.div>
+      </motion.div>
+    </Link>
   );
 }

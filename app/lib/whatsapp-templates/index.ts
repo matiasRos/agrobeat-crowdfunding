@@ -14,6 +14,9 @@ export * from './campaign-updates';
 // Exportar templates de recordatorios de cierre
 export * from './campaign-closing-reminder';
 
+// Exportar templates de nueva campaña disponible
+export * from './new-campaign-available';
+
 // TODO: Descomentar cuando se implementen
 // export * from './investment-notifications';
 // export * from './payment-notifications';

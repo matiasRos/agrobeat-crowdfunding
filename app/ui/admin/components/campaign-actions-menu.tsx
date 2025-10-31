@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { MoreVertical, MessageSquare, Bell } from 'lucide-react';
+import { MoreVertical, MessageSquare, Bell, Megaphone } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,7 +23,7 @@ interface CampaignActionsMenuProps {
 /**
  * Tipo de notificación a enviar
  */
-type NotificationType = 'update' | 'closing-reminder' | null;
+type NotificationType = 'update' | 'closing-reminder' | 'new-campaign' | null;
 
 /**
  * Menú de acciones para una campaña en el panel de administración
@@ -63,9 +63,16 @@ export function CampaignActionsMenu({
             <MoreVertical className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-[240px]">
+        <DropdownMenuContent align="end" className="w-[260px]">
           <DropdownMenuLabel>Notificaciones por WhatsApp</DropdownMenuLabel>
           <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onClick={() => handleOpenDialog('new-campaign')}
+            className="cursor-pointer"
+          >
+            <Megaphone className="mr-2 h-4 w-4" />
+            <span>Anunciar nueva campaña</span>
+          </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() => handleOpenDialog('update')}
             className="cursor-pointer"
@@ -83,15 +90,17 @@ export function CampaignActionsMenu({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <SendNotificationDialog
-        open={notificationDialogOpen}
-        onOpenChange={handleCloseDialog}
-        campaignId={campaignId}
-        campaignTitle={campaignTitle}
-        crop={crop}
-        investorCount={investorCount}
-        notificationType={notificationType || 'update'}
-      />
+      {notificationType && (
+        <SendNotificationDialog
+          open={notificationDialogOpen}
+          onOpenChange={handleCloseDialog}
+          campaignId={campaignId}
+          campaignTitle={campaignTitle}
+          crop={crop}
+          investorCount={investorCount}
+          notificationType={notificationType}
+        />
+      )}
     </>
   );
 }
