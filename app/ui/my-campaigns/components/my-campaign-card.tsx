@@ -57,7 +57,7 @@ export function MyCampaignCard({ campaign, userInvestment }: MyCampaignCardProps
           {/* Header con título y badge */}
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
-              <h3 className="text-xl font-bold tracking-tight line-clamp-1">
+              <h3 className="text-xl font-bold tracking-tight line-clamp-2">
                 {userInvestment.plantCount} plantas de {campaign.crop}
               </h3>
             </div>
