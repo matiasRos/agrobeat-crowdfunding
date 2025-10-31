@@ -61,6 +61,7 @@ export function CampaignStoriesViewer({
     if (onStoryViewed && initialIndex >= 0 && initialIndex < stories.length) {
       onStoryViewed(stories[initialIndex].id);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Solo se ejecuta al montar
 
   // Función helper para cambiar de índice y marcar como visto

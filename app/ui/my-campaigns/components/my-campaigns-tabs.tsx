@@ -23,15 +23,15 @@ interface MyCampaignsTabsProps {
 }
 
 export function MyCampaignsTabs({ investmentsByMonth }: MyCampaignsTabsProps) {
-  if (investmentsByMonth.length === 0) {
-    return null;
-  }
-
   // El primer mes es el más reciente (ya ordenado descendente en el Server Component)
-  const mostRecentMonth = investmentsByMonth[0].month;
+  const mostRecentMonth = investmentsByMonth.length > 0 ? investmentsByMonth[0].month : "todas";
 
   // Estado para el filtro seleccionado
   const [selectedFilter, setSelectedFilter] = useState(mostRecentMonth);
+
+  if (investmentsByMonth.length === 0) {
+    return null;
+  }
 
   // Obtener todas las inversiones para el filtro "Todas"
   const allInvestments = investmentsByMonth.flatMap(group => group.investments);

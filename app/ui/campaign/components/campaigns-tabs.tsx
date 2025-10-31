@@ -15,15 +15,15 @@ interface CampaignsTabsProps {
 }
 
 export function CampaignsTabs({ campaignsByMonth }: CampaignsTabsProps) {
-  if (campaignsByMonth.length === 0) {
-    return null;
-  }
-
   // El primer mes es el más reciente (ya ordenado descendente en el Server Component)
-  const mostRecentMonth = campaignsByMonth[0].month;
+  const mostRecentMonth = campaignsByMonth.length > 0 ? campaignsByMonth[0].month : "todas";
 
   // Estado para el filtro seleccionado
   const [selectedFilter, setSelectedFilter] = useState(mostRecentMonth);
+
+  if (campaignsByMonth.length === 0) {
+    return null;
+  }
 
   // Obtener todas las campañas para el filtro "Todas"
   const allCampaigns = campaignsByMonth.flatMap(group => group.campaigns);
